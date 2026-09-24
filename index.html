@@ -1,0 +1,49 @@
+<!doctype html>
+<html lang="es-CO" data-theme="oscuro">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+    <title>Monea</title>
+    <meta
+      name="description"
+      content="Organiza tu presupuesto en pesos colombianos: ingresos, bolsillos, metas y ahorro."
+    />
+
+    <!-- Color de la barra del navegador. El store del tema lo actualiza al
+         cambiar entre claro y oscuro (src/stores/tema.ts). -->
+    <meta name="theme-color" content="#0D0F12" />
+
+    <link rel="icon" href="/monea.ico" sizes="48x48" />
+    <link rel="icon" type="image/svg+xml" href="/monea.svg" />
+    <link rel="apple-touch-icon" href="/monea-icon.png" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Monea" />
+
+    <!-- Aplica el tema guardado ANTES del primer pintado para que no se vea un
+         flashazo del tema equivocado mientras React arranca. Es un espejo de
+         leerTemaGuardado() en src/stores/tema.ts. -->
+    <script>
+      ;(function () {
+        try {
+          var guardado = localStorage.getItem('miplata:tema')
+          var tema =
+            guardado === 'claro' || guardado === 'oscuro'
+              ? guardado
+              : window.matchMedia('(prefers-color-scheme: light)').matches
+                ? 'claro'
+                : 'oscuro'
+          document.documentElement.dataset.theme = tema
+          document
+            .querySelector('meta[name="theme-color"]')
+            .setAttribute('content', tema === 'claro' ? '#F4F6F8' : '#0D0F12')
+        } catch (e) {
+          /* sin localStorage nos quedamos con el tema oscuro del atributo */
+        }
+      })()
+    </script>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>

@@ -1,0 +1,172 @@
+/* ===========================================================================
+   theme.css — EL ÚNICO ARCHIVO DE TEMA DE LA APP
+   ---------------------------------------------------------------------------
+   Todos los colores viven aquí como design tokens. Ningún componente debe
+   escribir un color literal (#hex, rgb(), bg-green-500…): siempre utilidades
+   derivadas de estos tokens (bg-surface, text-accent, border-border…).
+
+   Cómo funciona
+   -------------
+   Tailwind v4 es "CSS-first": lo que se declara dentro de @theme se convierte
+   automáticamente en utilidades. `--color-surface` genera `bg-surface`,
+   `text-surface`, `border-surface`, etc.
+
+   El bloque @theme define el TEMA OSCURO, que es el tema por defecto.
+   El bloque [data-theme='claro'] solo redefine las mismas variables; como las
+   utilidades apuntan a var(--color-…), el cambio es instantáneo y no hace
+   falta tocar ni un componente.
+
+   Cambiar de paleta completa = reemplazar los valores de estos dos bloques.
+
+   Nombres por función, nunca por color
+   ------------------------------------
+   bg          fondo de la aplicación
+   surface     tarjetas y paneles
+   surface-2   un escalón de separación respecto a surface (inputs, filas)
+   accent      acento principal / logro — legible como TEXTO
+   accent-fill versión vibrante del acento para RELLENOS sólidos
+   on-accent   texto que va encima de accent-fill
+   positive    verdes: progreso, superávit, metas logradas
+   danger      rojos: déficit, alertas, eliminar
+   text        texto principal
+   text-muted  texto secundario
+   border      bordes y separadores
+
+   Nota sobre accent / accent-fill: el cian #22D3EE es perfecto sobre fondo
+   oscuro (10.6:1), pero sobre blanco solo alcanza 1.8:1 de contraste (no
+   cumple AA para texto). Por eso en modo claro `accent` baja a un cian oscuro
+   legible (5.4:1) mientras `accent-fill` conserva el cian vibrante para
+   botones y barras. Mismo criterio para `positive` en modo claro.
+   =========================================================================== */
+
+@import 'tailwindcss';
+
+@theme {
+  /* --------------------------------------------------------------------- */
+  /* Tipografía                                                            */
+  /* Inter para interfaz; Sora para cifras y titulares (se ve muy bien en   */
+  /* números grandes). Ambas autoalojadas para que la PWA funcione offline. */
+  /* --------------------------------------------------------------------- */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-display: 'Sora Variable', 'Inter Variable', ui-sans-serif, sans-serif;
+
+  /* --------------------------------------------------------------------- */
+  /* Formas y elevación                                                    */
+  /* --------------------------------------------------------------------- */
+  --radius-card: 12px;
+  --radius-panel: 20px;
+  --radius-pill: 999px;
+
+  --shadow-card: 0 1px 2px var(--color-shadow), 0 10px 30px -18px var(--color-shadow);
+  --shadow-flotante: 0 -8px 28px -18px var(--color-shadow);
+
+  /* --------------------------------------------------------------------- */
+  /* PALETA POR DEFECTO — "Grafito y cian", MODO OSCURO                     */
+  /* --------------------------------------------------------------------- */
+  --color-bg: #0d0f12;
+  --color-surface: #181b20;
+  --color-surface-2: #22262d;
+
+  --color-accent: #22d3ee;
+  --color-accent-fill: #22d3ee;
+  --color-on-accent: #0d0f12;
+  --color-accent-soft: rgb(34 211 238 / 0.14);
+
+  --color-positive: #34d399;
+  --color-positive-fill: #34d399;
+  --color-positive-soft: rgb(52 211 153 / 0.14);
+
+  --color-danger: #f26d6d;
+  --color-danger-fill: #f26d6d;
+  --color-danger-soft: rgb(242 109 109 / 0.14);
+
+  --color-text: #eceef1;
+  --color-text-muted: #828a94;
+  /* Alias corto: permite escribir `text-muted` en vez de `text-text-muted`. */
+  --color-muted: var(--color-text-muted);
+
+  --color-border: rgb(255 255 255 / 0.08);
+  --color-ring: var(--color-accent);
+  --color-shadow: rgb(0 0 0 / 0.5);
+}
+
+/* ===========================================================================
+   MODO CLARO — misma familia "grafito y cian", en versión diurna. Fondos
+   grises muy claros, superficies blancas, y el mismo cian y verde como
+   acentos (ajustados para mantener contraste AA sobre claro).
+   =========================================================================== */
+[data-theme='claro'] {
+  --color-bg: #f4f6f8;
+  --color-surface: #ffffff;
+  --color-surface-2: #edf0f3;
+
+  --color-accent: #0e7490; /* cian oscuro: 5.4:1 sobre blanco */
+  --color-accent-fill: #22d3ee; /* el cian vibrante se conserva en rellenos */
+  --color-on-accent: #062730;
+  --color-accent-soft: rgb(34 211 238 / 0.22);
+
+  --color-positive: #047857; /* 5.5:1 sobre blanco */
+  --color-positive-fill: #34d399;
+  --color-positive-soft: rgb(52 211 153 / 0.16);
+
+  --color-danger: #dc2626; /* 4.8:1 sobre blanco */
+  --color-danger-fill: #f26d6d;
+  --color-danger-soft: rgb(242 109 109 / 0.12);
+
+  --color-text: #14171a;
+  --color-text-muted: #5a626c;
+
+  --color-border: rgb(0 0 0 / 0.1);
+  --color-shadow: rgb(13 15 18 / 0.12);
+}
+
+/* ===========================================================================
+   Base
+   =========================================================================== */
+@layer base {
+  html {
+    /* Le dice al navegador cómo pintar scrollbars y controles nativos. */
+    color-scheme: dark;
+    -webkit-tap-highlight-color: transparent;
+    scrollbar-gutter: stable;
+  }
+
+  [data-theme='claro'] {
+    color-scheme: light;
+  }
+
+  body {
+    background-color: var(--color-bg);
+    color: var(--color-text);
+    font-family: var(--font-sans);
+    /* Suaviza el cambio de tema sin que se sienta lento. */
+    transition:
+      background-color 200ms ease,
+      color 200ms ease;
+    /* Respeta el notch y la barra de gestos en móvil. */
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  /* Foco visible y coherente en toda la app, sin anular la accesibilidad. */
+  :focus-visible {
+    outline: 2px solid var(--color-ring);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background-color: var(--color-accent-soft);
+  }
+}
+
+/* ===========================================================================
+   Clases de apoyo
+   =========================================================================== */
+@layer components {
+  /* Para cifras de dinero: tipografía display, dígitos de ancho fijo (no
+     "bailan" al actualizarse) y un poco de tracking negativo. */
+  .cifra {
+    font-family: var(--font-display);
+    font-variant-numeric: tabular-nums;
+    letter-spacing: -0.02em;
+  }
+}
