@@ -22,7 +22,7 @@ export function LayoutAuth({ titulo, descripcion, error, children, pie }: Props)
       <div className="w-full max-w-sm">
         {/* Logo */}
         <div className="mb-8 flex flex-col items-center gap-3 text-center">
-          <img src="/monea-96x96.png" alt="" className="size-14" />
+          <img src="/monea.svg" alt="" className="size-14" />
           <div>
             <h1 className="font-display text-2xl font-bold tracking-tight text-text">{titulo}</h1>
             <p className="mt-1 text-sm text-muted">{descripcion}</p>
