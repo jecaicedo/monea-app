@@ -63,41 +63,19 @@ export function InstalarApp() {
   const enIOS = esIOS()
   const mostrarBoton = !standalone && (enIOS || Boolean(evento))
 
+  if (!mostrarBoton) return null
+
   return (
     <>
-      {/* DIAGNÓSTICO TEMPORAL — borrar este bloque completo cuando se resuelva
-          por qué el botón no aparece en un iPhone real. */}
-      <div
-        style={{
-          position: 'fixed',
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 9999,
-          background: '#000',
-          color: '#0f0',
-          fontSize: 10,
-          lineHeight: 1.4,
-          padding: 8,
-          fontFamily: 'monospace',
-          whiteSpace: 'pre-wrap',
-          wordBreak: 'break-all',
-        }}
+      <button
+        type="button"
+        onClick={() => (enIOS ? setModalAbierto(true) : void instalarNativo())}
+        title="Instalar Monea en este dispositivo"
+        className="flex h-9 shrink-0 items-center gap-1.5 rounded-pill bg-accent-soft px-3.5 text-sm font-semibold text-accent transition-opacity hover:opacity-85"
       >
-        {`DIAGNÓSTICO PWA (temporal)\nstandalone=${String(standalone)}\nesIOS=${String(enIOS)}\nevento(beforeinstallprompt)=${String(Boolean(evento))}\nmostrarBoton=${String(mostrarBoton)}\nUA=${navigator.userAgent}`}
-      </div>
-
-      {mostrarBoton && (
-        <button
-          type="button"
-          onClick={() => (enIOS ? setModalAbierto(true) : void instalarNativo())}
-          title="Instalar Monea en este dispositivo"
-          className="flex h-10 items-center gap-1.5 rounded-pill px-3 text-sm font-medium text-muted transition-colors hover:bg-surface-2 hover:text-text"
-        >
-          <IconoInstalar className="size-[18px]" />
-          <span className="hidden sm:inline">Instalar</span>
-        </button>
-      )}
+        <IconoInstalar className="size-4" />
+        Instalar app
+      </button>
 
       <ModalInstalarIOS abierto={modalAbierto} onCerrar={() => setModalAbierto(false)} />
     </>

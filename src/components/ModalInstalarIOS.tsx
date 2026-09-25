@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import type { ReactNode } from 'react'
 
 import { IconoAgregarPantalla, IconoCerrar, IconoCompartir, IconoFlechaAbajo } from '@/components/ui/iconos'
@@ -14,6 +14,11 @@ import { IconoAgregarPantalla, IconoCerrar, IconoCompartir, IconoFlechaAbajo } f
  * DEBAJO de esa fila — un layout distinto. Por eso se arma su propio overlay,
  * calcado del mismo patrón (fondo atenuado, cierra con Escape o clic afuera,
  * bloquea el scroll) para que se sienta igual de consistente que el resto.
+ *
+ * Siempre se abre como hoja inferior (no se centra en pantallas grandes, a
+ * diferencia del `Modal` genérico): tiene sentido de sobra en su único
+ * contexto real, un iPhone, y encima deja apuntar la flecha del pie hacia la
+ * barra de Safari de verdad, justo debajo.
  */
 interface Props {
   abierto: boolean
@@ -41,8 +46,25 @@ function Paso({ numero, children }: { numero: number; children: ReactNode }) {
 }
 
 export function ModalInstalarIOS({ abierto, onCerrar }: Props) {
+  // `montado` mantiene el nodo en el DOM mientras dura la animación de
+  // salida; `visible` es lo que realmente dispara la transición CSS (entra en
+  // true un frame después de montar, para que el navegador alcance a pintar
+  // el estado inicial antes de animar hacia el final — si no, no hay transición).
+  const [montado, setMontado] = useState(abierto)
+  const [visible, setVisible] = useState(false)
+
   useEffect(() => {
-    if (!abierto) return
+    if (abierto) {
+      // eslint-disable-next-line react-hooks/exhaustive-deps
+      setMontado(true)
+      const id = requestAnimationFrame(() => setVisible(true))
+      return () => cancelAnimationFrame(id)
+    }
+    setVisible(false)
+  }, [abierto])
+
+  useEffect(() => {
+    if (!montado) return
 
     function alPresionarTecla(evento: KeyboardEvent) {
       if (evento.key === 'Escape') onCerrar()
@@ -56,13 +78,15 @@ export function ModalInstalarIOS({ abierto, onCerrar }: Props) {
       document.removeEventListener('keydown', alPresionarTecla)
       document.body.style.overflow = overflowPrevio
     }
-  }, [abierto, onCerrar])
+  }, [montado, onCerrar])
 
-  if (!abierto) return null
+  if (!montado) return null
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-bg/60 backdrop-blur-sm sm:place-items-center"
+      className={`fixed inset-0 z-50 grid place-items-end bg-bg/60 backdrop-blur-sm transition-opacity duration-300 ${
+        visible ? 'opacity-100' : 'opacity-0'
+      }`}
       onMouseDown={(e) => {
         if (e.target === e.currentTarget) onCerrar()
       }}
@@ -71,7 +95,15 @@ export function ModalInstalarIOS({ abierto, onCerrar }: Props) {
         role="dialog"
         aria-modal="true"
         aria-labelledby="instalar-ios-titulo"
-        className="w-full max-w-md rounded-t-panel border border-border bg-surface p-6 shadow-card sm:rounded-panel"
+        // Efecto de apertura tipo "abrir una app": entra deslizándose desde
+        // abajo con un ligero acercamiento (scale) y un remate suave (ease-out
+        // con un poco de rebote), en vez de aparecer de golpe.
+        className={`w-full max-w-md rounded-t-panel border border-border bg-surface p-6 shadow-card transition-all duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+          visible ? 'translate-y-0 scale-100 opacity-100' : 'translate-y-8 scale-95 opacity-0'
+        }`}
+        onTransitionEnd={() => {
+          if (!visible) setMontado(false)
+        }}
       >
         <div className="mb-5 flex items-start justify-between">
           <span className="grid size-11 place-items-center rounded-card bg-accent-soft text-accent">
