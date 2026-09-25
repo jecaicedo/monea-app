@@ -287,11 +287,18 @@ Fonts por CDN: sin conexión la app se vería con la fuente del sistema.
 
 ### El botón "Instalar"
 
-Solo aparece cuando el navegador dispara `beforeinstallprompt`. Si no se ve es
-porque la app ya está instalada, porque el navegador no lo soporta (en Safari
-iOS se instala manualmente con *Compartir → Añadir a pantalla de inicio*), o
-porque no se cumplen los requisitos (manifest + service worker + HTTPS;
-localhost cuenta como seguro).
+`src/components/InstalarApp.tsx` (cabecera) se oculta solo si `lib/pwa.ts` →
+`esStandalone()` detecta que la app ya corre instalada. Si no está instalada,
+el camino depende de la plataforma (`esIOS()`):
+
+- **iOS/Safari**: nunca dispara `beforeinstallprompt` (Apple no lo soporta), así
+  que el botón abre `ModalInstalarIOS` con los pasos manuales
+  (Compartir → Agregar a inicio).
+- **Android/Chromium y escritorio**: el botón solo aparece una vez que el
+  navegador dispara `beforeinstallprompt`; ahí dispara el instalador nativo con
+  `prompt()`. Si no se ve es porque la app ya está instalada o porque todavía
+  no se cumplen los requisitos (manifest + service worker + HTTPS; localhost
+  cuenta como seguro).
 
 ---
 

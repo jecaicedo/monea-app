@@ -1,7 +1,7 @@
 import { Link } from 'react-router-dom'
 
-import { BotonInstalar } from '@/components/BotonInstalar'
 import { BotonTema } from '@/components/BotonTema'
+import { InstalarApp } from '@/components/InstalarApp'
 import { MenuUsuario } from '@/components/MenuUsuario'
 import { ANCHO_CONTENIDO_APP } from '@/lib/layout'
 
@@ -23,7 +23,7 @@ export function Cabecera() {
         </Link>
 
         <div className="flex items-center gap-1">
-          <BotonInstalar />
+          <InstalarApp />
           <BotonTema />
           <MenuUsuario />
         </div>

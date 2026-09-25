@@ -385,3 +385,24 @@ export function IconoPresupuesto(props: PropsIcono) {
     </Base>
   )
 }
+
+/** Compartir (iOS): flecha hacia arriba saliendo de una bandeja. */
+export function IconoCompartir(props: PropsIcono) {
+  return (
+    <Base {...props}>
+      <path d="M12 3.5v11" />
+      <path d="M8.2 7.3 12 3.5l3.8 3.8" />
+      <path d="M5.5 12v6.5a1.5 1.5 0 0 0 1.5 1.5h10a1.5 1.5 0 0 0 1.5-1.5V12" />
+    </Base>
+  )
+}
+
+/** Agregar a inicio (iOS): un "+" dentro de un recuadro redondeado. */
+export function IconoAgregarPantalla(props: PropsIcono) {
+  return (
+    <Base {...props}>
+      <rect x="4" y="4" width="16" height="16" rx="4" />
+      <path d="M12 8.5v7M8.5 12h7" />
+    </Base>
+  )
+}
