@@ -84,6 +84,8 @@ public/            Iconos y favicon; se copian tal cual al build
 | `errores.ts` | Traduce los errores de Supabase Auth al español |
 | `validacion.ts` | Validación de correo y largo mínimo de contraseña |
 | `inicializacion.ts` | Llama la RPC `inicializar_presupuesto()` la primera vez |
+| `diagnostico.ts` | Fórmulas de presentación del tablero de "Revisa" |
+| `seguimiento.ts` | Fórmulas de presentación de "Mes a mes" y de la racha (periodos, cumplimiento, racha, pagado vs. presupuestado) |
 
 Alias de importación: `@/` apunta a `src/` (configurado en `vite.config.ts` y
 en `tsconfig.app.json`).
@@ -238,7 +240,12 @@ agrégalo al mapa.
   /actualiza   ·          sub-pestaña
   /revisa      ·          sub-pestaña
   /distribuir  ·          sub-pestaña
+  /mes-a-mes   ·          sub-pestaña
 ```
+
+Con cuatro sub-pestañas la tira segmentada ya no cabe repartida a lo ancho en
+un celular angosto, así que se desplaza en horizontal (`overflow-x-auto` +
+`whitespace-nowrap`) en vez de apretar las etiquetas.
 
 Las guardas están en `src/components/rutas.tsx`:
 
@@ -251,8 +258,8 @@ redirigieran de inmediato, un usuario con sesión válida vería un parpadeo del
 login en cada recarga, porque leer la sesión es asíncrono.
 
 **Presupuesto no está en la barra inferior** (solo tiene 3 pestañas): se entra
-desde el botón en el encabezado de Bolsillos. Mientras estás ahí, la pestaña
-Bolsillos sigue resaltada — eso lo controla `relacionadas` en
+desde la pestaña Otros. Mientras estás ahí, la pestaña
+Otros sigue resaltada — eso lo controla `relacionadas` en
 `src/components/BarraInferior.tsx`.
 
 ---
@@ -321,9 +328,10 @@ el camino depende de la plataforma (`esIOS()`):
 - **Deploy**: se usa `BrowserRouter`, así que el hosting debe reescribir todas
   las rutas a `index.html` o recargar en `/metas` da 404. En Vercel se resuelve
   con un `vercel.json` de rewrites; en Netlify con `_redirects`.
-- **Lógica del presupuesto**: las páginas de §6 son cascarones.
-- **Storage**: `antojos.foto_path` guarda una ruta, no una URL. Falta crear el
-  bucket privado con políticas por carpeta `auth.uid()/…`.
+- **Reporte estadístico de "Mes a mes"**: ya se guarda el histórico en
+  `seguimiento_mensual`, pero todavía no hay gráficas de tendencia entre meses
+  ni integración con Recordatorios. Queda para cuando haya varios meses de
+  datos reales.
 - **Recuperar contraseña**: no hay flujo de "olvidé mi contraseña"
   (`resetPasswordForEmail`).
 - **Perfil**: la tabla `perfiles` tiene columna `tema`, pero hoy la preferencia

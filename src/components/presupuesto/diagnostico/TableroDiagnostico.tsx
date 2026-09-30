@@ -20,6 +20,7 @@ interface Props {
   totalIngresos: number
   totalGastos: number
   totalAhorro: number
+  onEditar?: () => void
 }
 
 export function TableroDiagnostico({
@@ -30,6 +31,7 @@ export function TableroDiagnostico({
   totalIngresos,
   totalGastos,
   totalAhorro,
+  onEditar,
 }: Props) {
   if (totalIngresos <= 0) {
     return (
@@ -63,6 +65,7 @@ export function TableroDiagnostico({
         conceptosPorBolsillo={conceptosPorBolsillo}
         totalesPorCategoria={totalesPorCategoria}
         ingresos={totalIngresos}
+        onEditar={onEditar}
       />
     </div>
   )

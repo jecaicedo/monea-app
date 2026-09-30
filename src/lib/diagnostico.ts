@@ -1,4 +1,4 @@
-import { calcularTotalCategoria } from '@/stores/presupuesto'
+import { calcularTotalCategoria, SLUG_AHORRO } from '@/stores/presupuesto'
 import type { Bolsillo, Categoria, CategoriaSlug, Concepto } from '@/types/basedatos'
 
 /**
@@ -32,8 +32,6 @@ interface Holgura {
   diferencia: number
   tipo: TipoHolgura
 }
-
-const SLUG_AHORRO: CategoriaSlug = 'ahorro-con-proposito'
 
 /**
  * Holgura de una categoría frente a su ideal. Para "Ahorro con propósito" no

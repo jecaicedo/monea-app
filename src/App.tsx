@@ -13,6 +13,7 @@ import Recordatorios from '@/pages/otros/Recordatorios'
 import Actualiza from '@/pages/presupuesto/Actualiza'
 import Distribuir from '@/pages/presupuesto/Distribuir'
 import LayoutPresupuesto from '@/pages/presupuesto/LayoutPresupuesto'
+import MesAMes from '@/pages/presupuesto/MesAMes'
 import Revisa from '@/pages/presupuesto/Revisa'
 
 /**
@@ -20,8 +21,8 @@ import Revisa from '@/pages/presupuesto/Revisa'
  *
  *   /entrar, /registro          públicas (redirigen a la app si ya hay sesión)
  *   /metas, /bolsillos, /otros  las 3 pestañas de la barra inferior
- *   /presupuesto/*              vista con sus 3 sub-pestañas, se entra desde
- *                               Bolsillos
+ *   /presupuesto/*              vista con sus 4 sub-pestañas, se entra desde
+ *                               Otros
  */
 export default function App() {
   return (
@@ -51,6 +52,7 @@ export default function App() {
               <Route path="actualiza" element={<Actualiza />} />
               <Route path="revisa" element={<Revisa />} />
               <Route path="distribuir" element={<Distribuir />} />
+              <Route path="mes-a-mes" element={<MesAMes />} />
             </Route>
           </Route>
         </Route>

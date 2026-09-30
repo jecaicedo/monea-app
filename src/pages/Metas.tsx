@@ -6,6 +6,7 @@ import { FilaFondoEmergencia } from '@/components/metas/FilaFondoEmergencia'
 import { FilaMetas } from '@/components/metas/FilaMetas'
 import { FilaPasarPositivo } from '@/components/metas/FilaPasarPositivo'
 import { SeccionLogros } from '@/components/metas/SeccionLogros'
+import { TarjetaRacha } from '@/components/metas/TarjetaRacha'
 import { IconoCargando } from '@/components/ui/iconos'
 import { calcularEnPositivo, calcularFondoLogrado, estaMetaLograda } from '@/lib/metas'
 import { useAuth } from '@/stores/auth'
@@ -145,6 +146,10 @@ export default function Metas() {
             onAlternar={() => alternar('meta')}
           />
         </div>
+
+        {/* La racha va aquí, entre la progresión y los logros: es un logro más,
+            no una alerta. Las alertas viven arriba, en AvisoRecordatorios. */}
+        <TarjetaRacha />
 
         <SeccionLogros logros={logros} />
       </div>

@@ -100,6 +100,7 @@ export default function Revisa() {
           totalIngresos={totalIngresos}
           totalGastos={totalGastos}
           totalAhorro={totalAhorro}
+          onEditar={() => setModoEdicion(true)}
         />
       )}
     </div>

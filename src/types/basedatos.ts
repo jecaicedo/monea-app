@@ -325,6 +325,36 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['recordatorios']['Insert']>
         Relationships: []
       }
+      seguimiento_mensual: {
+        Row: {
+          id: string
+          user_id: string
+          concepto_id: string
+          anio: number
+          mes: number
+          /** Copia CONGELADA del monto mensual del concepto al crear la fila. */
+          monto_presupuestado: number
+          monto_pagado: number | null
+          /** null = pendiente de marcar, true = se pagó, false = no se pagó. */
+          cumplido: boolean | null
+          nota: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          concepto_id: string
+          anio: number
+          mes: number
+          monto_presupuestado?: number
+          monto_pagado?: number | null
+          cumplido?: boolean | null
+          nota?: string | null
+        }
+        Update: Partial<Database['public']['Tables']['seguimiento_mensual']['Insert']>
+        Relationships: []
+      }
     }
 
     Views: {
@@ -398,6 +428,11 @@ export interface Database {
         Args: Record<PropertyKey, never>
         Returns: Json
       }
+      /** RPC: crea las filas de seguimiento que falten para un mes. Idempotente. */
+      inicializar_seguimiento_mes: {
+        Args: { p_anio: number; p_mes: number }
+        Returns: Json
+      }
       /** Lleva un monto de cualquier frecuencia a su equivalente mensual. */
       normalizar_a_mensual: {
         Args: { monto: number; frecuencia: string }
@@ -440,6 +475,7 @@ export type Meta = Tablas['metas']['Row']
 export type Distribucion = Tablas['distribuciones']['Row']
 export type Antojo = Tablas['antojos']['Row']
 export type Recordatorio = Tablas['recordatorios']['Row']
+export type SeguimientoMensual = Tablas['seguimiento_mensual']['Row']
 
 export type ConceptoMensual = Vistas['v_conceptos_mensuales']['Row']
 export type IngresoNeto = Vistas['v_ingresos_netos']['Row']
@@ -452,4 +488,11 @@ export interface ResultadoInicializacion {
   bolsillos_creados: number
   conceptos_creados: number
   metas_creadas: number
+}
+
+/** Lo que devuelve la RPC inicializar_seguimiento_mes(). */
+export interface ResultadoSeguimientoMes {
+  creadas: number
+  /** false si el mes pedido no es el actual: no se creó nada a propósito. */
+  es_mes_actual: boolean
 }

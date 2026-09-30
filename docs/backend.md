@@ -23,6 +23,8 @@ anterior ya corrió.
 | `0006_rls.sql` | RLS y políticas en todo `public`, más `GRANT`/`REVOKE` | Necesita todas las tablas creadas |
 | `0007_funciones_negocio.sql` | `neto_ingreso()`, `inicializar_presupuesto()`, trigger de perfil | Necesita tablas, RLS y la semilla |
 | `0008_vistas.sql` | `v_conceptos_mensuales`, `v_ingresos_netos`, `v_resumen_presupuesto`, `v_resumen_por_categoria` | Necesita `neto_ingreso()` |
+| `0009_storage_antojos.sql` | Bucket privado de fotos de antojos y sus políticas | Necesita `antojos` |
+| `0010_seguimiento_mensual.sql` | `seguimiento_mensual` + RLS + `inicializar_seguimiento_mes()` | Necesita `conceptos` y `normalizar_a_mensual()` |
 
 Todo es idempotente (`if not exists`, `create or replace`, `on conflict do
 update`, `drop policy if exists`): se puede volver a ejecutar la carpeta
@@ -109,6 +111,52 @@ const { data } = await supabase.rpc('inicializar_presupuesto')
 
 El perfil **no** lo crea esta función: lo crea el trigger `on_auth_user_created`
 sobre `auth.users` en el momento del registro.
+
+### `seguimiento_mensual`: el presupuesto proyectado vs. lo que pasó
+
+`conceptos` es una **proyección** ("pienso gastar esto cada mes").
+`seguimiento_mensual` (migración `0010`) es el registro de si eso se cumplió,
+con una fila por concepto por mes.
+
+Son **sistemas paralelos**. Ni `v_resumen_presupuesto`, ni el diagnóstico de
+"Revisa", ni las metas leen esta tabla: sus números siguen saliendo 100% de
+`conceptos`. Lo único que comparten es la lista de conceptos como referencia.
+
+Tres decisiones que conviene conocer:
+
+**`monto_presupuestado` es una copia congelada**, no un cálculo en vivo. Se
+copia al crear la fila y no se recalcula nunca, ni siquiera durante el mes en
+curso. Si el usuario corrige el presupuesto el día 10, el seguimiento de ese
+mes conserva el monto con el que arrancó, que es justo lo que hace interesante
+la comparación "planeaste X, pagaste Y".
+
+**Borrar un concepto borra su historial completo.** La FK es
+`on delete cascade`, así que eliminar un concepto en "Revisa" se lleva sus
+marcas de todos los meses. Es una decisión consciente por simplicidad; si más
+adelante el historial debe sobrevivir, hay que volver `concepto_id` nullable
+con `on delete set null` y denormalizar el nombre del concepto y del bolsillo.
+
+**El arranque de mes es una RPC, no trabajo del cliente.**
+`inicializar_seguimiento_mes(anio, mes)` crea las filas que falten con un
+`insert … on conflict do nothing`, lo que cubre en una sola consulta los dos
+casos: el mes que empieza y el concepto agregado a mitad de mes. Es idempotente
+y toma un advisory lock por usuario y mes, así que el cliente puede llamarla
+cada vez que entra a la pantalla.
+
+```js
+const { data } = await supabase.rpc('inicializar_seguimiento_mes', { p_anio: 2026, p_mes: 9 })
+// { creadas: 31, es_mes_actual: true }
+```
+
+**Solo siembra el MES EN CURSO.** Un mes pasado sin registros se queda vacío a
+propósito: llenarlo copiaría el presupuesto de hoy a un mes que se vivió con
+otro (o sin ninguno), y eso falsearía tanto el historial como la racha que
+muestra Metas. Navegar el historial lo lee, nunca lo genera. Un mes futuro
+tampoco se siembra, por razones obvias.
+
+Solo entran los conceptos con monto mensual > 0. No existe una columna de
+"concepto activo" en `conceptos`, así que "activo" significa exactamente eso:
+que tenga monto.
 
 ---
 

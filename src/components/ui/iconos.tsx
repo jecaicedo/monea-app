@@ -276,6 +276,16 @@ export function IconoDistribuir(props: PropsIcono) {
 }
 
 /** Logro cumplido: una medalla. */
+/** Racha de meses cumplidos: una llama con su llama interior. */
+export function IconoLlama(props: PropsIcono) {
+  return (
+    <Base {...props}>
+      <path d="M12 2.7c3.4 3.1 5.4 5.8 5.4 8.7a5.4 5.4 0 0 1-10.8 0c0-1.8.8-3.5 2-4.8.3 1.1.9 1.9 1.7 2.4-.3-2.3.4-4.5 1.7-6.3Z" />
+      <path d="M12 12.6c1.3 1.1 2 2.1 2 3.2a2 2 0 0 1-4 0c0-1 .7-2.1 2-3.2Z" />
+    </Base>
+  )
+}
+
 export function IconoMedalla(props: PropsIcono) {
   return (
     <Base {...props}>

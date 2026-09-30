@@ -1,8 +1,12 @@
+import { useState } from 'react'
+
+import { IconoOjo } from '@/components/ui/iconos'
 import { calcularHolguraCategoria } from '@/lib/diagnostico'
 import { formatearCOP, formatearPorcentaje } from '@/lib/formato'
-import type { Categoria } from '@/types/basedatos'
+import type { Bolsillo, Categoria, Concepto } from '@/types/basedatos'
 
 import { BarraProgreso } from './BarraProgreso'
+import { ModalDetalleCategoria } from './ModalDetalleCategoria'
 
 /**
  * Una fila del detalle por categoría: punto + nombre, "ideal X% / vas en Y%",
@@ -13,16 +17,30 @@ interface Props {
   categoria: Categoria
   real: number
   ingresos: number
+  bolsillos: Bolsillo[]
+  conceptosPorBolsillo: Record<string, Concepto[]>
+  onEditar?: () => void
 }
 
-export function FilaCategoria({ categoria, real, ingresos }: Props) {
+export function FilaCategoria({ categoria, real, ingresos, bolsillos, conceptosPorBolsillo, onEditar }: Props) {
   const { diferencia, tipo } = calcularHolguraCategoria(categoria, real, ingresos)
+  const [detalleAbierto, setDetalleAbierto] = useState(false)
 
   return (
     <div className="flex flex-col gap-2 py-2">
       <div className="flex flex-wrap items-center gap-2">
         <span aria-hidden className="size-2.5 shrink-0 rounded-pill" style={{ backgroundColor: categoria.color }} />
         <span className="font-semibold text-text">{categoria.nombre}</span>
+        {/* El padding da un área de toque cómoda; el margen negativo no altera el ritmo de la fila. */}
+        <button
+          type="button"
+          onClick={() => setDetalleAbierto(true)}
+          title="Ver detalle"
+          aria-label={`Ver detalle de ${categoria.nombre}`}
+          className="-mx-1 grid place-items-center rounded-pill p-2 text-muted transition-colors hover:bg-surface-2 hover:text-accent"
+        >
+          <IconoOjo className="size-4" />
+        </button>
         <span className="text-xs text-muted">ideal {formatearPorcentaje(categoria.porcentaje_ideal / 100)}</span>
         <span className="text-xs font-semibold" style={{ color: categoria.color }}>
           vas en {formatearPorcentaje(real / ingresos)}
@@ -47,6 +65,17 @@ export function FilaCategoria({ categoria, real, ingresos }: Props) {
           </span>
         )}
       </div>
+
+      <ModalDetalleCategoria
+        abierto={detalleAbierto}
+        onCerrar={() => setDetalleAbierto(false)}
+        categoria={categoria}
+        real={real}
+        ingresos={ingresos}
+        bolsillos={bolsillos}
+        conceptosPorBolsillo={conceptosPorBolsillo}
+        onEditar={onEditar}
+      />
     </div>
   )
 }

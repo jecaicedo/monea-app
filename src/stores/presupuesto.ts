@@ -263,7 +263,12 @@ export function calcularTotalesPorCategoria(
   return totales
 }
 
-const SLUG_AHORRO: CategoriaSlug = 'ahorro-con-proposito'
+/**
+ * La única categoría de AHORRO. Vive aquí porque este store es la fuente de
+ * los totales; `lib/diagnostico.ts` y `lib/seguimiento.ts` la importan en vez
+ * de repetir el literal.
+ */
+export const SLUG_AHORRO: CategoriaSlug = 'ahorro-con-proposito'
 
 /** AHORRO de la barra de resumen: el total de la categoría "Ahorro con propósito". */
 export function calcularTotalAhorro(

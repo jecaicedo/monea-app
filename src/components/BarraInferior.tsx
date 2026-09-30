@@ -21,15 +21,15 @@ interface Pestana {
 
 const PESTANAS: Pestana[] = [
   { ruta: '/metas', etiqueta: 'Metas', Icono: IconoMetas },
+  { ruta: '/bolsillos', etiqueta: 'Bolsillos', Icono: IconoBolsillos },
   {
-    ruta: '/bolsillos',
-    etiqueta: 'Bolsillos',
-    Icono: IconoBolsillos,
-    // El presupuesto se entra desde Bolsillos, así que la pestaña sigue
-    // marcada mientras el usuario está ahí y no se siente perdido.
+    ruta: '/otros',
+    etiqueta: 'Otros',
+    Icono: IconoOtros,
+    // Presupuesto cuelga de Otros: la pestaña sigue marcada mientras el
+    // usuario está en cualquier sub-pestaña de /presupuesto.
     relacionadas: ['/presupuesto'],
   },
-  { ruta: '/otros', etiqueta: 'Otros', Icono: IconoOtros },
 ]
 
 export function BarraInferior() {

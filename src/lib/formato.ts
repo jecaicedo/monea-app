@@ -41,6 +41,13 @@ export function formatearFecha(iso: string): string {
   return FORMATO_FECHA.format(new Date(iso))
 }
 
+const FORMATO_MES_ANIO = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
+
+/** (2026, 9) -> "septiembre de 2026". El mes va 1-12, no 0-11. */
+export function formatearMesAnio(anio: number, mes: number): string {
+  return FORMATO_MES_ANIO.format(new Date(anio, mes - 1, 1))
+}
+
 /** Hoy en 'YYYY-MM-DD', en hora LOCAL (no UTC, para no correrse un día según el huso). */
 export function fechaISOHoy(): string {
   const hoy = new Date()

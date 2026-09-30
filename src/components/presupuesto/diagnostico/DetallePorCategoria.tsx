@@ -15,6 +15,7 @@ interface Props {
   conceptosPorBolsillo: Record<string, Concepto[]>
   totalesPorCategoria: Record<string, number>
   ingresos: number
+  onEditar?: () => void
 }
 
 export function DetallePorCategoria({
@@ -23,6 +24,7 @@ export function DetallePorCategoria({
   conceptosPorBolsillo,
   totalesPorCategoria,
   ingresos,
+  onEditar,
 }: Props) {
   const gastosFijos = calcularGastosFijos(categorias, bolsillos, conceptosPorBolsillo)
 
@@ -48,6 +50,9 @@ export function DetallePorCategoria({
             categoria={categoria}
             real={totalesPorCategoria[categoria.id] ?? 0}
             ingresos={ingresos}
+            bolsillos={bolsillos}
+            conceptosPorBolsillo={conceptosPorBolsillo}
+            onEditar={onEditar}
           />
         ))}
       </div>
