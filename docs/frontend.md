@@ -286,6 +286,28 @@ actualizar las rutas en `vite.config.ts` e `index.html`).
 | `monea.ico` | Favicon clásico (`<link rel="icon">`) |
 | `monea.svg` | Favicon en el `<link rel="icon" type="image/svg+xml">`. Ojo: es un PNG de 1.3 MB embebido en base64 dentro de un `<svg>`, no un vector real — no lo agrandes ni lo dupliques sin necesidad, porque entra íntegro al precache de workbox. |
 
+### Notificaciones push
+
+El service worker sigue siendo el que genera Workbox (`generateSW`); los
+listeners de `push` y `notificationclick` viven en `public/push-sw.js` y
+entran por `workbox.importScripts` en `vite.config.ts`.
+
+**Por qué no `injectManifest`**: nos haría dueños de todo lo que Workbox genera
+solo (precache, `navigateFallback` de la SPA, `skipWaiting` que necesita
+`autoUpdate`), o sea reescribir algo que ya funciona para agregarle dos
+listeners. El precio de esta vía es que `push-sw.js` es JavaScript plano, sin
+TypeScript ni bundler. Los navegadores comparan los `importScripts` byte a byte
+al buscar actualizaciones, así que los cambios se propagan igual.
+
+`src/lib/push.ts` maneja permiso, suscripción y borrado;
+`ActivarNotificaciones` es la tarjeta de `/otros/recordatorios` con los cuatro
+estados posibles. El permiso es **por dispositivo**, no por cuenta.
+
+En iOS solo funciona con la PWA instalada (iOS 16.4+): Safari expone
+`Notification` aunque no esté instalada, pero `pushManager.subscribe()` falla,
+así que `estadoPermiso()` revisa `esIOS() && !esStandalone()` **antes** de mirar
+el permiso, para no pedir uno que no va a servir.
+
 ### Sin conexión
 
 Las tipografías van autoalojadas (`@fontsource-variable`) y entran al precache

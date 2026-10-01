@@ -41,6 +41,23 @@ export function formatearFecha(iso: string): string {
   return FORMATO_FECHA.format(new Date(iso))
 }
 
+const FORMATO_HORA = new Intl.DateTimeFormat('es-CO', { hour: 'numeric', minute: '2-digit', hour12: true })
+
+/**
+ * "08:00:00" -> "8:00 a. m.". Recibe la hora como la devuelve Postgres para
+ * una columna `time` ('HH:MM:SS' o 'HH:MM'); se arma sobre una fecha ficticia
+ * porque Intl formatea instantes, no horas sueltas.
+ */
+export function formatearHora(hora: string): string {
+  const [horas, minutos] = hora.split(':').map(Number)
+  return FORMATO_HORA.format(new Date(2000, 0, 1, horas, minutos))
+}
+
+/** "08:00:00" -> "08:00", que es lo que espera un <input type="time">. */
+export function horaParaInput(hora: string): string {
+  return hora.slice(0, 5)
+}
+
 const FORMATO_MES_ANIO = new Intl.DateTimeFormat('es-CO', { month: 'long', year: 'numeric' })
 
 /** (2026, 9) -> "septiembre de 2026". El mes va 1-12, no 0-11. */

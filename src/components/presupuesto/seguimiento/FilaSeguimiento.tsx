@@ -4,11 +4,41 @@ import { CampoTexto } from '@/components/ui/CampoTexto'
 import { IconoFlechaAbajo } from '@/components/ui/iconos'
 import { IndicadorGuardado } from '@/components/ui/IndicadorGuardado'
 import { formatearCOP } from '@/lib/formato'
+import { evaluarDiferencia } from '@/lib/seguimiento'
 import { useSeguimientoMensual } from '@/stores/seguimientoMensual'
 import type { CategoriaSlug, SeguimientoMensual } from '@/types/basedatos'
 
 import { ControlEstado } from './ControlEstado'
 import { IndicadorDiferencia } from './IndicadorDiferencia'
+
+/**
+ * Tinte de fondo de la fila. Es un refuerzo para escanear el mes de un
+ * vistazo: la fuente de verdad sigue siendo el ✓/✗ y el indicador de
+ * diferencia, que no cambian.
+ *
+ * La columna se lee en tres niveles de gravedad: verde = lo pagué como lo
+ * planeé, ámbar = lo pagué pero me pasé del monto, rojo = no lo pagué. El rojo
+ * es para el ✗ porque dejar algo sin pagar pesa más que pagarlo de más.
+ *
+ * Pagar EXACTO cuenta como verde: en un presupuesto pegarle a tu número es el
+ * caso de éxito. Si 'igual' fuera neutro, como el flujo normal es marcar ✓ sin
+ * tocar el monto, casi ninguna fila se teñiría y no habría nada que escanear.
+ *
+ * El matiz fino de cuánto se pasó o se quedó corto no se pierde: lo lleva el
+ * IndicadorDiferencia, que sigue siendo la fuente de verdad.
+ *
+ * El sentido lo da `evaluarDiferencia`, así que la inversión de "Ahorro con
+ * propósito" (ahorrar de menos es desfavorable) se hereda sin lógica duplicada.
+ */
+function fondoSegunEstado(registro: SeguimientoMensual, categoriaSlug: CategoriaSlug): string {
+  if (registro.cumplido === null) return 'bg-transparent'
+  if (registro.cumplido === false) return 'bg-danger-tenue'
+  // Cumplido sin monto capturado: cumplió, que es lo que importa para el barrido.
+  if (registro.monto_pagado === null) return 'bg-positive-tenue'
+
+  const { sentido } = evaluarDiferencia(registro.monto_pagado, registro.monto_presupuestado, categoriaSlug)
+  return sentido === 'desfavorable' ? 'bg-warning-tenue' : 'bg-positive-tenue'
+}
 
 /**
  * Una línea de seguimiento: el concepto con su monto presupuestado y el
@@ -50,39 +80,32 @@ export function FilaSeguimiento({
   const desplegable = marcado && !soloLectura
 
   function cambiarEstado(cumplido: boolean | null) {
-    // Volver a "pendiente" limpia lo capturado y cierra: el registro queda sin
-    // marcar, así que no hay detalle que mostrar.
-    if (cumplido === null) {
-      actualizar(registro.id, { cumplido: null, monto_pagado: null, nota: null })
-      onAbertura(false)
-      return
-    }
-
     // Tocar otra vez el estado que ya estaba marcado solo pliega o despliega.
-    // No se vuelve a guardar nada ni se pierde la marca.
+    // No se vuelve a guardar nada ni se pierde lo capturado.
     if (cumplido === registro.cumplido) {
       onAbertura(!abierta)
       return
     }
 
-    // Al dar por cumplido, lo más común es que se haya pagado justo lo
-    // presupuestado: se precarga para que no haya que escribirlo. Si no se
-    // cumplió, el monto queda en blanco (no se pagó nada, salvo que el usuario
-    // diga otra cosa).
-    if (cumplido === true && registro.monto_pagado === null) {
-      actualizar(registro.id, { cumplido, monto_pagado: registro.monto_presupuestado })
-    } else {
-      actualizar(registro.id, { cumplido })
-    }
-    onAbertura(true)
+    // Cambiar de estado DESCARTA el contexto del anterior: el monto y la nota
+    // que escribiste bajo un ✓ no significan nada bajo un ✗, y dejarlos haría
+    // que el indicador de diferencia de la marca vieja siguiera visible sobre
+    // la nueva. Al dar por cumplido se precarga el presupuestado, que es lo
+    // más común; en los otros dos estados el monto queda en blanco.
+    actualizar(registro.id, {
+      cumplido,
+      monto_pagado: cumplido === true ? registro.monto_presupuestado : null,
+      nota: null,
+    })
+
+    onAbertura(cumplido !== null)
   }
 
   return (
     <div
-      className={[
-        'rounded-card p-3 transition-colors',
-        marcado ? 'bg-surface-2' : 'bg-transparent',
-      ].join(' ')}
+      // El tinte vive en el contenedor, que envuelve encabezado y cuerpo del
+      // acordeón: así la señal se ve igual con la fila colapsada y expandida.
+      className={['rounded-card p-3 transition-colors', fondoSegunEstado(registro, categoriaSlug)].join(' ')}
     >
       <Acordeon
         abierta={abierta && desplegable}

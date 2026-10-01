@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react'
 import { Link } from 'react-router-dom'
 
 import { EncabezadoPagina } from '@/components/EncabezadoPagina'
+import { ActivarNotificaciones } from '@/components/recordatorios/ActivarNotificaciones'
 import { ModalNuevoRecordatorio } from '@/components/recordatorios/ModalNuevoRecordatorio'
 import { TarjetaRecordatorio, TarjetaRecordatorioVacia } from '@/components/recordatorios/TarjetaRecordatorio'
 import { Boton } from '@/components/ui/Boton'
@@ -60,6 +61,8 @@ export default function Recordatorios() {
       <Link to="/otros" className="mb-4 inline-flex text-sm font-semibold text-accent hover:underline">
         ← Otros
       </Link>
+
+      <ActivarNotificaciones />
 
       {ordenados.length === 0 ? (
         <TarjetaRecordatorioVacia onCrear={() => setModalAbierto(true)} />

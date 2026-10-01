@@ -25,6 +25,8 @@ anterior ya corrió.
 | `0008_vistas.sql` | `v_conceptos_mensuales`, `v_ingresos_netos`, `v_resumen_presupuesto`, `v_resumen_por_categoria` | Necesita `neto_ingreso()` |
 | `0009_storage_antojos.sql` | Bucket privado de fotos de antojos y sus políticas | Necesita `antojos` |
 | `0010_seguimiento_mensual.sql` | `seguimiento_mensual` + RLS + `inicializar_seguimiento_mes()` | Necesita `conceptos` y `normalizar_a_mensual()` |
+| `0011_horarios_recordatorio.sql` | `horarios_recordatorio` + RLS, y el `unique (id, user_id)` que le faltaba a `recordatorios` | Necesita `recordatorios` |
+| `0012_push_notificaciones.sql` | `push_subscripciones`, `envios_notificacion`, `ocurre_en_fecha()`, `horarios_pendientes()` | Necesita `horarios_recordatorio` |
 
 Todo es idempotente (`if not exists`, `create or replace`, `on conflict do
 update`, `drop policy if exists`): se puede volver a ejecutar la carpeta
@@ -157,6 +159,66 @@ tampoco se siembra, por razones obvias.
 Solo entran los conceptos con monto mensual > 0. No existe una columna de
 "concepto activo" en `conceptos`, así que "activo" significa exactamente eso:
 que tenga monto.
+
+---
+
+### Horarios de aviso de un recordatorio
+
+`horarios_recordatorio` (migración `0011`) guarda hasta 3 horas del día por
+recordatorio. `recordatorios.notificar` sigue siendo el interruptor general: si
+está en `false` no se envía nada, por muchos horarios que haya. El envío real
+(Web Push + Edge Function + cron) todavía no existe.
+
+**El tope de 3 es declarativo, no un trigger.** `orden` solo admite 0, 1 o 2 y
+es único por recordatorio, así que la cuarta fila es imposible a nivel de
+índice. Un trigger que contara filas tendría una carrera entre dos inserciones
+simultáneas salvo que tomara un lock; esto no. El precio es que `orden` es una
+**ranura**, no el orden de pantalla: si se borra la del medio quedan la 0 y la
+2, y el cliente ordena por `hora`.
+
+**`0011` agrega un `unique (id, user_id)` a `recordatorios`.** No lo tenía (a
+diferencia de `ingresos`, `bolsillos` y `conceptos`), y sin él Postgres no deja
+crear la FK compuesta `(recordatorio_id, user_id)` que el proyecto usa para que
+nadie cuelgue filas del registro de otro usuario.
+
+`hora` es `time` sin zona y siempre se interpreta en `America/Bogota`. Colombia
+no tiene horario de verano, así que guardar la hora local no se desfasa dos
+veces al año.
+
+### Notificaciones push
+
+La migración `0012` y la Edge Function `enviar-notificaciones-recordatorios`
+mandan el aviso real. El cron la dispara cada 10 minutos.
+
+**La idempotencia es "insertar antes de enviar".** `envios_notificacion` tiene
+`unique (horario_id, fecha)`: la función inserta la marca *antes* de mandar el
+push y, si el insert falla por conflicto, otra corrida ya tomó ese aviso y se
+lo salta. Comprobar primero y escribir después dejaría pasar dos corridas
+simultáneas; así la exclusión la da el índice. Esa tabla no la toca ningún
+usuario: RLS activo, sin políticas y sin `grant`.
+
+**Toda la aritmética de fechas vive en SQL**, en `ocurre_en_fecha()` y
+`horarios_pendientes()`. La Edge Function corre en UTC y cerca de medianoche
+calcularía mal el "hoy" de Bogotá, así que solo resuelve la hora local con
+`Intl` y le pasa la ventana ya hecha a Postgres. `ocurre_en_fecha()` replica el
+`clamp` de fin de mes de `src/lib/recordatorios.ts` (un recordatorio del 31 cae
+el 28 en febrero) y la migración falla sola si esa aritmética se rompe: trae un
+bloque de verificación con los casos límite.
+
+**La ventana es `[desde, hasta)` y mira hacia atrás.** A las 10:00 cubre
+`[09:50, 10:00)`, así el aviso llega hasta 10 minutos tarde y nunca antes de
+tiempo, que es lo que promete la interfaz. Entre las 00:00 y las 00:09 se parte
+en dos tramos (el final de ayer y el principio de hoy); sin eso, los últimos
+minutos del día quedarían sin cubrir.
+
+**Suscripciones muertas.** Si el envío falla con 404 o 410 el navegador revocó
+la suscripción y no se recupera, así que se borra la fila en vez de reintentar
+cada 10 minutos para siempre. Cualquier otro error se deja pasar y se reintenta
+al día siguiente.
+
+Los secretos (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`) se
+configuran con `npx supabase secrets set`. `SUPABASE_URL` y
+`SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase solo.
 
 ---
 

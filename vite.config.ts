@@ -49,6 +49,13 @@ export default defineConfig({
         // Las fuentes van autoalojadas (woff2), asi que entran al cache y la
         // app se ve igual sin conexion.
         globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        // El service worker generado carga nuestros listeners de Web Push
+        // (public/push-sw.js). Es la alternativa a injectManifest: deja
+        // intacto todo lo que Workbox genera solo (precache, navigateFallback,
+        // skipWaiting) y solo le suma los dos listeners.
+        importScripts: ['/push-sw.js'],
+        // No tiene sentido precachear un archivo que el propio SW importa.
+        globIgnores: ['push-sw.js'],
       },
       devOptions: {
         // Permite probar la instalacion con `npm run dev`, sin hacer build.

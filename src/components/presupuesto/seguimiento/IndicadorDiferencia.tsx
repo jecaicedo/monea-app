@@ -10,6 +10,11 @@ import type { CategoriaSlug } from '@/types/basedatos'
  * Si se pagó exactamente lo presupuestado no pinta nada: la fila lo muestra
  * incluso colapsada, y un chip de "todo en orden" en cada concepto sería puro
  * ruido en una lista larga.
+ *
+ * Lo desfavorable va en ÁMBAR y no en rojo para hablar con la misma voz que el
+ * fondo de la fila: el rojo está reservado para "no lo pagué", que pesa más
+ * que "lo pagué pero me pasé". Un chip rojo sobre fondo ámbar diría que la
+ * fila es grave y moderada a la vez.
  */
 interface Props {
   montoPagado: number
@@ -19,7 +24,7 @@ interface Props {
 
 const COLOR_POR_SENTIDO = {
   favorable: 'bg-positive-soft text-positive',
-  desfavorable: 'bg-danger-soft text-danger',
+  desfavorable: 'bg-warning-soft text-warning',
 } as const
 
 export function IndicadorDiferencia({ montoPagado, montoPresupuestado, categoriaSlug }: Props) {

@@ -27,16 +27,41 @@
    accent-fill versión vibrante del acento para RELLENOS sólidos
    on-accent   texto que va encima de accent-fill
    positive    verdes: progreso, superávit, metas logradas
+   warning     ámbar: "cumpliste, pero te pasaste del monto" — un escalón por
+               debajo de danger en gravedad
    danger      rojos: déficit, alertas, eliminar
+   *-tenue     surface-2 ya mezclado con el matiz, para TINTAR filas enteras
+               (ver la nota de abajo sobre por qué no basta con *-soft)
    text        texto principal
    text-muted  texto secundario
    border      bordes y separadores
+   scrollbar   pulgar de las barras de desplazamiento (ver @layer base)
 
    Nota sobre accent / accent-fill: el cian #22D3EE es perfecto sobre fondo
    oscuro (10.6:1), pero sobre blanco solo alcanza 1.8:1 de contraste (no
    cumple AA para texto). Por eso en modo claro `accent` baja a un cian oscuro
    legible (5.4:1) mientras `accent-fill` conserva el cian vibrante para
    botones y barras. Mismo criterio para `positive` en modo claro.
+
+   Nota sobre *-soft y *-tenue: ambos son el matiz VIBRANTE a baja opacidad.
+   Los `-soft` (14-16%) están calibrados para áreas pequeñas — chips, píldoras,
+   la pestaña activa. Extendidos a una fila completa saturan. Los `-tenue` son
+   para eso: el mismo matiz al 12% (oscuro) o 16% (claro), pero ya mezclado
+   sobre `surface-2` y entregado como color OPACO. Son opacos a propósito: si
+   fueran alfa, una fila tintada perdería el escalón de surface-2 y se vería
+   hundida frente a una fila neutra, que es justo lo contrario de lo que el
+   tinte quiere comunicar. Se usan en las filas de "Mes a mes".
+
+   La asimetría 12/16 no es un descuido: en oscuro el matiz es mucho más
+   luminoso que la superficie y con poco ya se lee; en claro ambos están cerca
+   en luminancia y hace falta más para que se note.
+
+   Nota sobre warning: su base es #fbbf24 y no un ámbar más anaranjado porque
+   al 12% sobre grafito el anaranjado daba #3b3429, demasiado cerca del rojo
+   #3b2f35. El amarillo separa el doble y los tres tintes se distinguen.
+   `warning` baja a un ámbar oscuro en modo claro por la misma razón que
+   `accent` y `positive`: el amarillo vibrante sobre fondo claro no llega a AA.
+   No existe `warning-fill` porque todavía nada necesita un relleno sólido.
    =========================================================================== */
 
 @import 'tailwindcss';
@@ -75,10 +100,19 @@
   --color-positive: #34d399;
   --color-positive-fill: #34d399;
   --color-positive-soft: rgb(52 211 153 / 0.14);
+  /* #34d399 al 12% sobre surface-2 (#22262d) */
+  --color-positive-tenue: #243b3a;
+
+  --color-warning: #fbbf24;
+  --color-warning-soft: rgb(251 191 36 / 0.14);
+  /* #fbbf24 al 12% sobre surface-2 (#22262d) */
+  --color-warning-tenue: #3c382c;
 
   --color-danger: #f26d6d;
   --color-danger-fill: #f26d6d;
   --color-danger-soft: rgb(242 109 109 / 0.14);
+  /* #f26d6d al 12% sobre surface-2 (#22262d) */
+  --color-danger-tenue: #3b2f35;
 
   --color-text: #eceef1;
   --color-text-muted: #828a94;
@@ -88,6 +122,11 @@
   --color-border: rgb(255 255 255 / 0.08);
   --color-ring: var(--color-accent);
   --color-shadow: rgb(0 0 0 / 0.5);
+
+  /* Más marcadas que `border`: una barra al 8% sería invisible y la gracia es
+     que se note que hay más contenido abajo, sin robarle atención. */
+  --color-scrollbar: rgb(255 255 255 / 0.16);
+  --color-scrollbar-hover: rgb(255 255 255 / 0.3);
 }
 
 /* ===========================================================================
@@ -108,16 +147,28 @@
   --color-positive: #047857; /* 5.5:1 sobre blanco */
   --color-positive-fill: #34d399;
   --color-positive-soft: rgb(52 211 153 / 0.16);
+  /* #34d399 al 16% sobre surface-2 (#edf0f3) */
+  --color-positive-tenue: #cfebe5;
+
+  --color-warning: #92400e; /* ámbar oscuro: 5.8:1 sobre el tinte ámbar claro */
+  --color-warning-soft: rgb(251 191 36 / 0.16);
+  /* #fbbf24 al 16% sobre surface-2 (#edf0f3) */
+  --color-warning-tenue: #efe8d2;
 
   --color-danger: #dc2626; /* 4.8:1 sobre blanco */
   --color-danger-fill: #f26d6d;
   --color-danger-soft: rgb(242 109 109 / 0.12);
+  /* #f26d6d al 16% sobre surface-2 (#edf0f3) */
+  --color-danger-tenue: #eedbde;
 
   --color-text: #14171a;
   --color-text-muted: #5a626c;
 
   --color-border: rgb(0 0 0 / 0.1);
   --color-shadow: rgb(13 15 18 / 0.12);
+
+  --color-scrollbar: rgb(0 0 0 / 0.2);
+  --color-scrollbar-hover: rgb(0 0 0 / 0.34);
 }
 
 /* ===========================================================================
@@ -129,6 +180,12 @@
     color-scheme: dark;
     -webkit-tap-highlight-color: transparent;
     scrollbar-gutter: stable;
+
+    /* Barras finas y discretas en TODA la app. `scrollbar-width` y
+       `scrollbar-color` se heredan, así que basta declararlas aquí: no hace
+       falta el selector universal `*`, que obligaría a recalcular de más. */
+    scrollbar-width: thin;
+    scrollbar-color: var(--color-scrollbar) transparent;
   }
 
   [data-theme='claro'] {
@@ -155,6 +212,88 @@
 
   ::selection {
     background-color: var(--color-accent-soft);
+  }
+
+  /* WebKit y Chromium todavía no respetan `scrollbar-width`/`scrollbar-color`
+     en todas sus versiones (Safari no lo soporta), así que se repite el mismo
+     resultado con los pseudo-elementos. Sin canaleta y con el pulgar en
+     píldora, para que combine con el resto de las formas de la app. */
+  ::-webkit-scrollbar {
+    width: 8px;
+    height: 8px;
+  }
+
+  ::-webkit-scrollbar-track,
+  ::-webkit-scrollbar-corner {
+    background: transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    background-color: var(--color-scrollbar);
+    border-radius: var(--radius-pill);
+    /* Evita que en una lista muy larga el pulgar quede del tamaño de un punto. */
+    min-height: 32px;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    background-color: var(--color-scrollbar-hover);
+  }
+
+  /* La utilidad `scrollbar-none` de Tailwind solo emite `scrollbar-width:
+     none`, que Safari todavía ignora. Sin esto, la regla de arriba le
+     devolvería la barra a quien pidió explícitamente no tenerla (hoy, la tira
+     de sub-pestañas de Presupuesto). */
+  .scrollbar-none::-webkit-scrollbar {
+    display: none;
+  }
+
+  /* -----------------------------------------------------------------------
+     Campos nativos de fecha y hora (<input type="date"|"time">)
+     -----------------------------------------------------------------------
+     OJO: el PANEL que se abre al pulsarlos (el calendario, la rueda de horas)
+     lo dibuja el navegador fuera del DOM y NINGUNA regla CSS lo alcanza. Lo
+     único que se hereda ahí es `color-scheme`, que ya se declara en html y es
+     lo que hace que salga oscuro en vez de blanco.
+
+     Lo de abajo es todo lo que sí es nuestro: el icono y los segmentos
+     editables dentro del campo.
+     ----------------------------------------------------------------------- */
+
+  /* El icono de calendario/reloj. Nativamente es negro o blanco puro según el
+     color-scheme; se baja a la intensidad del texto secundario para que no
+     grite más que el valor. */
+  ::-webkit-calendar-picker-indicator {
+    cursor: pointer;
+    opacity: 0.55;
+    border-radius: var(--radius-pill);
+    transition: opacity 150ms ease;
+  }
+
+  ::-webkit-calendar-picker-indicator:hover {
+    opacity: 1;
+  }
+
+  /* El segmento que se está editando (hora, minutos, a.m./p.m., día, mes,
+     año). Por defecto el navegador lo resalta con el azul del sistema, que no
+     tiene nada que ver con la paleta de la app. */
+  ::-webkit-datetime-edit-hour-field:focus,
+  ::-webkit-datetime-edit-minute-field:focus,
+  ::-webkit-datetime-edit-second-field:focus,
+  ::-webkit-datetime-edit-ampm-field:focus,
+  ::-webkit-datetime-edit-day-field:focus,
+  ::-webkit-datetime-edit-month-field:focus,
+  ::-webkit-datetime-edit-year-field:focus {
+    background-color: var(--color-accent-soft);
+    color: var(--color-accent);
+    border-radius: 4px;
+    outline: none;
+  }
+
+  /* El texto gris de los separadores (":" y "/") se alinea con el resto de
+     texto secundario de la app. */
+  ::-webkit-datetime-edit-text {
+    color: var(--color-text-muted);
+    padding: 0 1px;
   }
 }
 

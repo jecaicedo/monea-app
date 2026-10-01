@@ -325,6 +325,48 @@ export interface Database {
         Update: Partial<Database['public']['Tables']['recordatorios']['Insert']>
         Relationships: []
       }
+      push_subscripciones: {
+        Row: {
+          id: string
+          user_id: string
+          /** URL del servicio push del navegador. Identifica al aparato. */
+          endpoint: string
+          p256dh: string
+          auth: string
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          endpoint: string
+          p256dh: string
+          auth: string
+        }
+        Update: Partial<Database['public']['Tables']['push_subscripciones']['Insert']>
+        Relationships: []
+      }
+      horarios_recordatorio: {
+        Row: {
+          id: string
+          user_id: string
+          recordatorio_id: string
+          /** Hora local de Colombia en formato 'HH:MM:SS'. */
+          hora: string
+          /** Ranura 0-2: impone el tope de 3. El orden de pantalla es por `hora`. */
+          orden: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          recordatorio_id: string
+          hora: string
+          orden?: number
+        }
+        Update: Partial<Database['public']['Tables']['horarios_recordatorio']['Insert']>
+        Relationships: []
+      }
       seguimiento_mensual: {
         Row: {
           id: string
@@ -475,6 +517,8 @@ export type Meta = Tablas['metas']['Row']
 export type Distribucion = Tablas['distribuciones']['Row']
 export type Antojo = Tablas['antojos']['Row']
 export type Recordatorio = Tablas['recordatorios']['Row']
+export type HorarioRecordatorio = Tablas['horarios_recordatorio']['Row']
+export type PushSubscripcion = Tablas['push_subscripciones']['Row']
 export type SeguimientoMensual = Tablas['seguimiento_mensual']['Row']
 
 export type ConceptoMensual = Vistas['v_conceptos_mensuales']['Row']

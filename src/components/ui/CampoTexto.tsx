@@ -12,9 +12,19 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, 'id'> {
   etiqueta: string
   error?: string
   ayuda?: string
+  /** Oculta visualmente la etiqueta pero la conserva para lectores de pantalla. */
+  ocultarEtiqueta?: boolean
 }
 
-export function CampoTexto({ etiqueta, error, ayuda, type = 'text', className = '', ...props }: Props) {
+export function CampoTexto({
+  etiqueta,
+  error,
+  ayuda,
+  ocultarEtiqueta = false,
+  type = 'text',
+  className = '',
+  ...props
+}: Props) {
   const id = useId()
   const idAyuda = `${id}-ayuda`
   const [visible, setVisible] = useState(false)
@@ -24,7 +34,7 @@ export function CampoTexto({ etiqueta, error, ayuda, type = 'text', className = 
 
   return (
     <div className="flex flex-col gap-1.5">
-      <label htmlFor={id} className="text-sm font-medium text-text">
+      <label htmlFor={id} className={ocultarEtiqueta ? 'sr-only' : 'text-sm font-medium text-text'}>
         {etiqueta}
       </label>
 

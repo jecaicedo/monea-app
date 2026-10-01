@@ -45,7 +45,8 @@ export function ModalDetalleCategoria({
 
   return (
     <Modal abierto={abierto} onCerrar={onCerrar} titulo={categoria.nombre}>
-      <div className="flex max-h-[70vh] flex-col gap-4 overflow-y-auto pr-4 scrollbar-gutter-stable">
+      {/* El scroll y el tope de altura los pone el propio Modal. */}
+      <div className="flex flex-col gap-4">
         <div
           className="flex flex-wrap items-center justify-between gap-2 rounded-card border-l-4 bg-surface-2 p-3"
           style={{ borderLeftColor: categoria.color }}

@@ -1,3 +1,4 @@
+import { EditorHorarios } from '@/components/recordatorios/EditorHorarios'
 import { obtenerConfigTipo } from '@/components/recordatorios/tiposRecordatorio'
 import { Boton } from '@/components/ui/Boton'
 import { CampoTexto } from '@/components/ui/CampoTexto'
@@ -5,6 +6,7 @@ import { IconoBasura } from '@/components/ui/iconos'
 import { IndicadorGuardado } from '@/components/ui/IndicadorGuardado'
 import { Interruptor } from '@/components/ui/Interruptor'
 import { Selector } from '@/components/ui/Selector'
+import { formatearHora, horaParaInput } from '@/lib/formato'
 import { calcularEstadoProximidad, calcularProximaOcurrencia, formatearFechaRecordatorio } from '@/lib/recordatorios'
 import { useRecordatorios } from '@/stores/recordatorios'
 import type { EstadoProximidad } from '@/lib/recordatorios'
@@ -49,6 +51,15 @@ export function TarjetaRecordatorio({ recordatorio }: Props) {
   const eliminar = useRecordatorios((estado) => estado.eliminar)
   const guardando = useRecordatorios((estado) => estado.guardando.has(recordatorio.id))
 
+  const horarios = useRecordatorios((estado) => estado.horariosPorRecordatorio[recordatorio.id])
+  const agregarHorario = useRecordatorios((estado) => estado.agregarHorario)
+  const actualizarHorario = useRecordatorios((estado) => estado.actualizarHorario)
+  const eliminarHorario = useRecordatorios((estado) => estado.eliminarHorario)
+
+  // El selector devuelve undefined mientras no haya horarios cargados para
+  // este recordatorio; se normaliza una vez aquí en vez de en cada uso.
+  const listaHorarios = horarios ?? []
+
   const config = obtenerConfigTipo(recordatorio.tipo)
   const { fecha, diasHasta } = calcularProximaOcurrencia(recordatorio.fecha, recordatorio.recurrencia)
   const estado = calcularEstadoProximidad(diasHasta)
@@ -90,6 +101,11 @@ export function TarjetaRecordatorio({ recordatorio }: Props) {
           {formatearFechaRecordatorio(fecha, diasHasta)}
           {etiquetaEstado && ` · ${etiquetaEstado}`}
         </span>
+        {/* Las horas solo se muestran si el aviso está activo: apagarlo no las
+            borra, pero mientras tanto no significan nada. */}
+        {recordatorio.notificar && listaHorarios.length > 0 && (
+          <span className="text-muted">· {listaHorarios.map((h) => formatearHora(h.hora)).join(', ')}</span>
+        )}
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
@@ -114,6 +130,15 @@ export function TarjetaRecordatorio({ recordatorio }: Props) {
         activo={recordatorio.notificar}
         onCambio={(valor) => actualizar(recordatorio.id, { notificar: valor })}
       />
+
+      {recordatorio.notificar && (
+        <EditorHorarios
+          horarios={listaHorarios.map((h) => ({ id: h.id, hora: horaParaInput(h.hora) }))}
+          onAgregar={() => void agregarHorario(recordatorio.id)}
+          onCambiar={(id, hora) => actualizarHorario(recordatorio.id, id, hora)}
+          onEliminar={(id) => void eliminarHorario(recordatorio.id, id)}
+        />
+      )}
     </div>
   )
 }

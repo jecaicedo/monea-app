@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import type { FormEvent } from 'react'
 
+import { EditorHorarios } from '@/components/recordatorios/EditorHorarios'
 import { TIPOS_RECORDATORIO } from '@/components/recordatorios/tiposRecordatorio'
 import { Boton } from '@/components/ui/Boton'
 import { CampoTexto } from '@/components/ui/CampoTexto'
@@ -8,7 +9,7 @@ import { Interruptor } from '@/components/ui/Interruptor'
 import { Modal } from '@/components/ui/Modal'
 import { Selector } from '@/components/ui/Selector'
 import { fechaISOHoy } from '@/lib/formato'
-import { useRecordatorios } from '@/stores/recordatorios'
+import { horaSugerida, MAX_HORARIOS, useRecordatorios } from '@/stores/recordatorios'
 import type { Recurrencia, TipoRecordatorio } from '@/types/basedatos'
 
 /** '' -> una vez (recurrencia null). Las demás opciones del CHECK del backend no se exponen aquí. */
@@ -20,8 +21,12 @@ const OPCIONES_RECURRENCIA = [
 
 /**
  * Modal "Nuevo recordatorio": tipo (cuadrícula de íconos), título, fecha,
- * recurrencia y el interruptor "Avisarme" (por ahora solo se guarda, ver
- * `stores/recordatorios.ts`).
+ * recurrencia, el interruptor "Avisarme" y sus horas de aviso (por ahora solo
+ * se guardan, ver `stores/recordatorios.ts`).
+ *
+ * Las horas viven en estado local hasta que se envía el formulario: el
+ * recordatorio todavía no existe y la FK compuesta necesita su id, así que el
+ * store las inserta después de crearlo.
  */
 interface Props {
   abierto: boolean
@@ -36,6 +41,7 @@ export function ModalNuevoRecordatorio({ abierto, onCerrar }: Props) {
   const [fecha, setFecha] = useState(fechaISOHoy())
   const [recurrencia, setRecurrencia] = useState('')
   const [notificar, setNotificar] = useState(true)
+  const [horas, setHoras] = useState<string[]>([])
   const [error, setError] = useState<string | null>(null)
   const [creando, setCreando] = useState(false)
 
@@ -46,6 +52,7 @@ export function ModalNuevoRecordatorio({ abierto, onCerrar }: Props) {
       setFecha(fechaISOHoy())
       setRecurrencia('')
       setNotificar(true)
+      setHoras([])
       setError(null)
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -66,14 +73,24 @@ export function ModalNuevoRecordatorio({ abierto, onCerrar }: Props) {
       return
     }
 
+    if (notificar && new Set(horas).size !== horas.length) {
+      setError('Tienes dos horarios con la misma hora.')
+      return
+    }
+
     setCreando(true)
-    await crear({
-      tipo,
-      titulo: tituloLimpio,
-      fecha,
-      recurrencia: (recurrencia || null) as Recurrencia | null,
-      notificar,
-    })
+    await crear(
+      {
+        tipo,
+        titulo: tituloLimpio,
+        fecha,
+        recurrencia: (recurrencia || null) as Recurrencia | null,
+        notificar,
+      },
+      // Con el aviso apagado no se guardan horas; si está encendido y no
+      // eligió ninguna, el store pone la de por defecto.
+      notificar ? horas : [],
+    )
     setCreando(false)
     onCerrar()
   }
@@ -135,6 +152,21 @@ export function ModalNuevoRecordatorio({ abierto, onCerrar }: Props) {
           activo={notificar}
           onCambio={setNotificar}
         />
+
+        {notificar && (
+          <EditorHorarios
+            horarios={horas.map((hora, indice) => ({ id: String(indice), hora }))}
+            onAgregar={() =>
+              setHoras((actuales) =>
+                actuales.length >= MAX_HORARIOS ? actuales : [...actuales, horaSugerida(actuales)],
+              )
+            }
+            onCambiar={(id, hora) =>
+              setHoras((actuales) => actuales.map((valor, indice) => (String(indice) === id ? hora : valor)))
+            }
+            onEliminar={(id) => setHoras((actuales) => actuales.filter((_, indice) => String(indice) !== id))}
+          />
+        )}
 
         {error && (
           <p role="alert" className="text-sm text-danger">

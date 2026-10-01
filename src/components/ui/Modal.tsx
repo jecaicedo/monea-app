@@ -7,6 +7,12 @@ import { IconoCerrar } from './iconos'
  * Modal centrado con overlay. Cierra con Escape, con clic en el fondo, o con
  * el botón de cerrar. Primitivo genérico: quien lo usa arma el contenido
  * (título propio, formulario, botones de acción).
+ *
+ * El panel nunca pasa del alto de la pantalla: el encabezado queda fijo y es
+ * el cuerpo el que se desplaza. Por eso el padding vive en el encabezado y en
+ * el cuerpo y no en el panel — así la barra de scroll queda pegada al borde y
+ * el título no se va con el contenido. Quien use este modal NO necesita poner
+ * su propio `max-h` ni `overflow-y-auto`.
  */
 interface Props {
   abierto: boolean
@@ -41,7 +47,7 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children }: Prop
 
   return (
     <div
-      className="fixed inset-0 z-50 grid place-items-end bg-bg/60 backdrop-blur-sm sm:place-items-center"
+      className="fixed inset-0 z-50 grid place-items-end bg-bg/60 backdrop-blur-sm sm:place-items-center sm:p-4"
       onMouseDown={(e) => {
         // Solo cierra si el clic empezó fuera del panel (no al arrastrar un
         // texto seleccionado desde dentro hacia afuera).
@@ -53,9 +59,9 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children }: Prop
         role="dialog"
         aria-modal="true"
         aria-labelledby="modal-titulo"
-        className="w-full max-w-md rounded-t-panel border border-border bg-surface p-6 shadow-card sm:rounded-panel"
+        className="flex max-h-[90dvh] w-full max-w-md flex-col rounded-t-panel border border-border bg-surface shadow-card sm:rounded-panel"
       >
-        <div className="mb-4 flex items-start justify-between gap-4">
+        <div className="flex shrink-0 items-start justify-between gap-4 p-6 pb-4">
           <div>
             <h2 id="modal-titulo" className="font-display text-lg font-bold text-text">
               {titulo}
@@ -72,7 +78,9 @@ export function Modal({ abierto, onCerrar, titulo, descripcion, children }: Prop
           </button>
         </div>
 
-        {children}
+        {/* min-h-0 es lo que permite que un hijo de flex se encoja por debajo
+            de su contenido; sin eso el overflow nunca se activa. */}
+        <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-6 pb-6">{children}</div>
       </div>
     </div>
   )
