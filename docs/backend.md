@@ -216,9 +216,23 @@ la suscripción y no se recupera, así que se borra la fila en vez de reintentar
 cada 10 minutos para siempre. Cualquier otro error se deja pasar y se reintenta
 al día siguiente.
 
-Los secretos (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`) se
-configuran con `npx supabase secrets set`. `SUPABASE_URL` y
+Los secretos (`VAPID_PRIVATE_KEY`, `VAPID_PUBLIC_KEY`, `VAPID_SUBJECT`,
+`CRON_SECRET`) se configuran con `npx supabase secrets set`. `SUPABASE_URL` y
 `SUPABASE_SERVICE_ROLE_KEY` los inyecta Supabase solo.
+
+**Por qué la función va con `verify_jwt = false`.** El primer intento fue que
+el cron leyera la `service_role` del Vault de Postgres para armar el header
+`Authorization`. No funciona: `pg_cron` corre en un contexto que no puede
+descifrar `vault.decrypted_secrets`, así que todas las corridas daban 401
+aunque el job figurara como `succeeded`.
+
+La solución fue quitar la verificación de JWT (en `supabase/config.toml`, no
+como bandera del deploy, que es fácil de olvidar) y que la función valide ella
+misma un `x-cron-secret` contra `CRON_SECRET`. Ese secreto queda en texto plano
+dentro de `cron.job`, y es un compromiso consciente: es de un solo propósito,
+no la `service_role`. Quien lo tuviera solo podría disparar la función fuera de
+hora — no leer ni escribir datos, y la idempotencia de `envios_notificacion`
+impide que se dupliquen avisos.
 
 ---
 

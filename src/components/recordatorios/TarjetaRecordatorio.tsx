@@ -1,8 +1,9 @@
 import { EditorHorarios } from '@/components/recordatorios/EditorHorarios'
 import { obtenerConfigTipo } from '@/components/recordatorios/tiposRecordatorio'
+import { Acordeon } from '@/components/ui/Acordeon'
 import { Boton } from '@/components/ui/Boton'
 import { CampoTexto } from '@/components/ui/CampoTexto'
-import { IconoBasura } from '@/components/ui/iconos'
+import { IconoBasura, IconoFlechaAbajo } from '@/components/ui/iconos'
 import { IndicadorGuardado } from '@/components/ui/IndicadorGuardado'
 import { Interruptor } from '@/components/ui/Interruptor'
 import { Selector } from '@/components/ui/Selector'
@@ -41,12 +42,20 @@ const ETIQUETA_ESTADO: Record<EstadoProximidad, string> = {
  * autosave (mismo patrón que TarjetaBolsilloSobre/TarjetaMetaPropia, sin un
  * modo edición aparte). El color se lo da el ESTADO de proximidad, no el
  * tipo — ver `components/recordatorios/tiposRecordatorio.tsx`.
+ *
+ * Contraída muestra lo que se consulta de un vistazo (título, tipo, cuándo y a
+ * qué horas) y esconde los campos de edición, que son la mayor parte del alto.
+ * El título se puede editar sin desplegar: por eso quien alterna es un chevron
+ * aparte y no el encabezado entero, que además no podría serlo sin anidar un
+ * input dentro de un botón.
  */
 interface Props {
   recordatorio: Recordatorio
+  abierta: boolean
+  onAlternar: () => void
 }
 
-export function TarjetaRecordatorio({ recordatorio }: Props) {
+export function TarjetaRecordatorio({ recordatorio, abierta, onAlternar }: Props) {
   const actualizar = useRecordatorios((estado) => estado.actualizar)
   const eliminar = useRecordatorios((estado) => estado.eliminar)
   const guardando = useRecordatorios((estado) => estado.guardando.has(recordatorio.id))
@@ -66,79 +75,101 @@ export function TarjetaRecordatorio({ recordatorio }: Props) {
   const etiquetaEstado = ETIQUETA_ESTADO[estado]
 
   return (
-    <div className={`flex flex-col gap-3 rounded-panel border p-4 sm:p-5 ${ESTILOS_ESTADO[estado]}`}>
-      <div className="flex items-center gap-3">
-        <span aria-hidden className="grid size-9 shrink-0 place-items-center rounded-card bg-surface-2 text-muted">
-          <config.Icono className="size-4.5" />
-        </span>
+    <div className={`rounded-panel border p-4 sm:p-5 ${ESTILOS_ESTADO[estado]}`}>
+      <Acordeon
+        abierta={abierta}
+        claseCuerpo="mt-4 flex flex-col gap-3 border-t border-border pt-4"
+        encabezado={
+          <div className="flex flex-col gap-1.5">
+            <div className="flex items-center gap-2.5">
+              <span
+                aria-hidden
+                className="grid size-9 shrink-0 place-items-center rounded-card bg-surface-2 text-muted"
+              >
+                <config.Icono className="size-4.5" />
+              </span>
 
-        <label htmlFor={`recordatorio-titulo-${recordatorio.id}`} className="sr-only">
-          Título del recordatorio
-        </label>
-        <input
-          id={`recordatorio-titulo-${recordatorio.id}`}
-          value={recordatorio.titulo}
-          onChange={(e) => actualizar(recordatorio.id, { titulo: e.target.value })}
-          placeholder="Título del recordatorio"
-          className="min-w-0 flex-1 truncate bg-transparent font-display text-base font-semibold text-text outline-none"
+              <label htmlFor={`recordatorio-titulo-${recordatorio.id}`} className="sr-only">
+                Título del recordatorio
+              </label>
+              <input
+                id={`recordatorio-titulo-${recordatorio.id}`}
+                value={recordatorio.titulo}
+                onChange={(e) => actualizar(recordatorio.id, { titulo: e.target.value })}
+                placeholder="Título del recordatorio"
+                className="min-w-0 flex-1 truncate bg-transparent font-display text-base font-semibold text-text outline-none"
+              />
+
+              <button
+                type="button"
+                onClick={onAlternar}
+                aria-expanded={abierta}
+                aria-label={`${abierta ? 'Contraer' : 'Expandir'} ${recordatorio.titulo || 'el recordatorio'}`}
+                className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-surface-2 hover:text-text"
+              >
+                <IconoFlechaAbajo className={`size-4 transition-transform ${abierta ? 'rotate-180' : ''}`} />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => void eliminar(recordatorio.id)}
+                aria-label={`Eliminar el recordatorio ${recordatorio.titulo || 'sin título'}`}
+                className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-danger-soft hover:text-danger"
+              >
+                <IconoBasura className="size-4" />
+              </button>
+            </div>
+
+            {/* El resumen va aquí y no en la fila de arriba para que en un
+                celular angosto no compita por ancho con el título. */}
+            <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
+              <span className="font-medium text-muted">{config.etiqueta}</span>
+              <span className={`font-semibold ${TEXTO_ESTADO[estado]}`}>
+                {formatearFechaRecordatorio(fecha, diasHasta)}
+                {etiquetaEstado && ` · ${etiquetaEstado}`}
+              </span>
+              {/* Las horas solo se muestran si el aviso está activo: apagarlo no
+                  las borra, pero mientras tanto no significan nada. */}
+              {recordatorio.notificar && listaHorarios.length > 0 && (
+                <span className="text-muted">· {listaHorarios.map((h) => formatearHora(h.hora)).join(', ')}</span>
+              )}
+              <IndicadorGuardado guardando={guardando} />
+            </div>
+          </div>
+        }
+      >
+        <div className="grid gap-3 sm:grid-cols-2">
+          <CampoTexto
+            etiqueta="Fecha"
+            type="date"
+            value={recordatorio.fecha}
+            onChange={(e) => actualizar(recordatorio.id, { fecha: e.target.value })}
+          />
+          <Selector
+            etiqueta="Se repite"
+            opciones={OPCIONES_RECURRENCIA}
+            value={recordatorio.recurrencia ?? ''}
+            onChange={(e) =>
+              actualizar(recordatorio.id, { recurrencia: (e.target.value || null) as Recurrencia | null })
+            }
+          />
+        </div>
+
+        <Interruptor
+          etiqueta="Avisarme"
+          activo={recordatorio.notificar}
+          onCambio={(valor) => actualizar(recordatorio.id, { notificar: valor })}
         />
 
-        <IndicadorGuardado guardando={guardando} />
-
-        <button
-          type="button"
-          onClick={() => void eliminar(recordatorio.id)}
-          aria-label={`Eliminar el recordatorio ${recordatorio.titulo || 'sin título'}`}
-          className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-danger-soft hover:text-danger"
-        >
-          <IconoBasura className="size-4" />
-        </button>
-      </div>
-
-      <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs">
-        <span className="font-medium text-muted">{config.etiqueta}</span>
-        <span className={`font-semibold ${TEXTO_ESTADO[estado]}`}>
-          {formatearFechaRecordatorio(fecha, diasHasta)}
-          {etiquetaEstado && ` · ${etiquetaEstado}`}
-        </span>
-        {/* Las horas solo se muestran si el aviso está activo: apagarlo no las
-            borra, pero mientras tanto no significan nada. */}
-        {recordatorio.notificar && listaHorarios.length > 0 && (
-          <span className="text-muted">· {listaHorarios.map((h) => formatearHora(h.hora)).join(', ')}</span>
+        {recordatorio.notificar && (
+          <EditorHorarios
+            horarios={listaHorarios.map((h) => ({ id: h.id, hora: horaParaInput(h.hora) }))}
+            onAgregar={() => void agregarHorario(recordatorio.id)}
+            onCambiar={(id, hora) => actualizarHorario(recordatorio.id, id, hora)}
+            onEliminar={(id) => void eliminarHorario(recordatorio.id, id)}
+          />
         )}
-      </div>
-
-      <div className="grid gap-3 sm:grid-cols-2">
-        <CampoTexto
-          etiqueta="Fecha"
-          type="date"
-          value={recordatorio.fecha}
-          onChange={(e) => actualizar(recordatorio.id, { fecha: e.target.value })}
-        />
-        <Selector
-          etiqueta="Se repite"
-          opciones={OPCIONES_RECURRENCIA}
-          value={recordatorio.recurrencia ?? ''}
-          onChange={(e) =>
-            actualizar(recordatorio.id, { recurrencia: (e.target.value || null) as Recurrencia | null })
-          }
-        />
-      </div>
-
-      <Interruptor
-        etiqueta="Avisarme"
-        activo={recordatorio.notificar}
-        onCambio={(valor) => actualizar(recordatorio.id, { notificar: valor })}
-      />
-
-      {recordatorio.notificar && (
-        <EditorHorarios
-          horarios={listaHorarios.map((h) => ({ id: h.id, hora: horaParaInput(h.hora) }))}
-          onAgregar={() => void agregarHorario(recordatorio.id)}
-          onCambiar={(id, hora) => actualizarHorario(recordatorio.id, id, hora)}
-          onEliminar={(id) => void eliminarHorario(recordatorio.id, id)}
-        />
-      )}
+      </Acordeon>
     </div>
   )
 }

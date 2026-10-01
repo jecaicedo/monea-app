@@ -105,7 +105,10 @@ export function ModalNuevoRecordatorio({ abierto, onCerrar }: Props) {
       <form onSubmit={manejarCrear} className="flex flex-col gap-4">
         <div className="flex flex-col gap-1.5">
           <span className="text-sm font-medium text-text">Tipo</span>
-          <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
+          {/* auto-rows-fr iguala el alto de las dos filas: sin eso, la que
+              contiene "Pico y placa" (que parte en dos líneas) queda más alta
+              que la de arriba y la cuadrícula se ve desalineada. */}
+          <div className="grid auto-rows-fr grid-cols-3 gap-2 sm:grid-cols-5">
             {TIPOS_RECORDATORIO.map((config) => {
               const seleccionado = config.valor === tipo
               return (

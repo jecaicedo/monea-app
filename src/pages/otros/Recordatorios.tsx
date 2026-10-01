@@ -22,6 +22,19 @@ export default function Recordatorios() {
   const cargar = useRecordatorios((estado) => estado.cargar)
 
   const [modalAbierto, setModalAbierto] = useState(false)
+  // Qué tarjetas están expandidas. Vacío = todas contraídas, igual que los
+  // bolsillos y los ingresos: con varios recordatorios, la lista desplegada no
+  // cabe en una pantalla y lo que se consulta de un vistazo ya se ve contraído.
+  const [abiertas, setAbiertas] = useState<Set<string>>(new Set())
+
+  function alternar(id: string) {
+    setAbiertas((actual) => {
+      const siguiente = new Set(actual)
+      if (siguiente.has(id)) siguiente.delete(id)
+      else siguiente.add(id)
+      return siguiente
+    })
+  }
 
   useEffect(() => {
     void cargar()
@@ -69,7 +82,12 @@ export default function Recordatorios() {
       ) : (
         <div className="flex flex-col gap-3">
           {ordenados.map((recordatorio) => (
-            <TarjetaRecordatorio key={recordatorio.id} recordatorio={recordatorio} />
+            <TarjetaRecordatorio
+              key={recordatorio.id}
+              recordatorio={recordatorio}
+              abierta={abiertas.has(recordatorio.id)}
+              onAlternar={() => alternar(recordatorio.id)}
+            />
           ))}
         </div>
       )}

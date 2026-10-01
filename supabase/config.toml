@@ -1,0 +1,18 @@
+# Configuración del CLI de Supabase.
+#
+# Archivo mínimo a propósito: solo declara lo que no puede quedar implícito.
+# Todo lo demás usa los valores por defecto del CLI. Si alguna vez hace falta
+# desarrollo local completo (supabase start / db reset), `supabase init`
+# genera la versión larga.
+
+[functions.enviar-notificaciones-recordatorios]
+# pg_cron no puede leer el Vault de Postgres para armar un header Authorization
+# con la service_role, así que Supabase no debe exigir JWT en esta función.
+#
+# Va aquí y no como bandera `--no-verify-jwt` del deploy porque la bandera hay
+# que acordarse de repetirla en CADA despliegue: olvidarla una vez deja el cron
+# devolviendo 401 otra vez, en silencio.
+#
+# Esto NO deja la función abierta: ella valida el header 'x-cron-secret' contra
+# el secreto CRON_SECRET antes de hacer cualquier otra cosa.
+verify_jwt = false

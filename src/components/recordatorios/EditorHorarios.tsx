@@ -28,8 +28,12 @@ export function EditorHorarios({ horarios, onAgregar, onCambiar, onEliminar }: P
       ) : (
         <ul className="flex flex-col gap-2">
           {horarios.map((horario, indice) => (
-            <li key={horario.id} className="flex items-end gap-2">
-              <div className="flex-1">
+            <li key={horario.id} className="flex items-center gap-2">
+              {/* min-w-0 es imprescindible: un <input type="time"> trae un ancho
+                  mínimo propio del navegador y, sin esto, un hijo de flex no
+                  baja de ese ancho — se desborda y se mete debajo del botón de
+                  borrar en pantallas angostas. */}
+              <div className="min-w-0 flex-1">
                 <CampoTexto
                   etiqueta={`Hora ${indice + 1}`}
                   ocultarEtiqueta

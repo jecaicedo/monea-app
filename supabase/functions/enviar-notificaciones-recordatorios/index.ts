@@ -11,6 +11,17 @@
 // Corre con service_role, asi que hace bypass de RLS: el filtrado por usuario
 // es explicito en cada consulta.
 //
+// AUTENTICACION: se despliega con verify_jwt = false (ver supabase/config.toml)
+// porque pg_cron no puede leer el Vault de Postgres para armar el header
+// Authorization. En su lugar la funcion valida ella misma un secreto propio en
+// el header 'x-cron-secret' contra CRON_SECRET.
+//
+// Ese secreto queda en texto plano dentro de cron.job, y es un compromiso
+// aceptado: es un secreto de un solo proposito, no la service_role. Si se
+// filtrara, lo peor que puede hacer quien lo tenga es disparar esta funcion
+// fuera de hora — no puede leer ni escribir datos, y la idempotencia de
+// envios_notificacion impide que se dupliquen avisos.
+//
 // Despliegue:
 //   npx supabase functions deploy enviar-notificaciones-recordatorios
 // =============================================================================
@@ -127,7 +138,18 @@ function ventanaActual(fecha: string, minutos: number): Tramo[] {
   ]
 }
 
-Deno.serve(async () => {
+Deno.serve(async (req) => {
+  // Como Supabase ya no exige JWT para esta funcion, esta comprobacion es lo
+  // unico que separa el endpoint de internet. Va antes que nada: sin secreto
+  // valido no se toca la base ni se gasta una invocacion de verdad.
+  const secretoEsperado = Deno.env.get('CRON_SECRET')
+  if (!secretoEsperado) {
+    return Response.json({ error: 'Falta CRON_SECRET en los secretos.' }, { status: 500 })
+  }
+  if (req.headers.get('x-cron-secret') !== secretoEsperado) {
+    return Response.json({ error: 'No autorizado.' }, { status: 401 })
+  }
+
   const llavePublica = Deno.env.get('VAPID_PUBLIC_KEY')
   const llavePrivada = Deno.env.get('VAPID_PRIVATE_KEY')
   const subject = Deno.env.get('VAPID_SUBJECT')
