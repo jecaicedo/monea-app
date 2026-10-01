@@ -1,9 +1,11 @@
+import { useState } from 'react'
+
 import { EditorHorarios } from '@/components/recordatorios/EditorHorarios'
 import { obtenerConfigTipo } from '@/components/recordatorios/tiposRecordatorio'
 import { Acordeon } from '@/components/ui/Acordeon'
 import { Boton } from '@/components/ui/Boton'
 import { CampoTexto } from '@/components/ui/CampoTexto'
-import { IconoBasura, IconoFlechaAbajo } from '@/components/ui/iconos'
+import { IconoBasura, IconoCheck, IconoFlechaAbajo, IconoLapiz } from '@/components/ui/iconos'
 import { IndicadorGuardado } from '@/components/ui/IndicadorGuardado'
 import { Interruptor } from '@/components/ui/Interruptor'
 import { Selector } from '@/components/ui/Selector'
@@ -56,6 +58,10 @@ interface Props {
 }
 
 export function TarjetaRecordatorio({ recordatorio, abierta, onAlternar }: Props) {
+  // El título se edita solo al pedirlo con el lápiz. El resto del tiempo es
+  // texto, para que tocarlo expanda la tarjeta y no compita con esa acción.
+  const [editando, setEditando] = useState(false)
+
   const actualizar = useRecordatorios((estado) => estado.actualizar)
   const eliminar = useRecordatorios((estado) => estado.eliminar)
   const guardando = useRecordatorios((estado) => estado.guardando.has(recordatorio.id))
@@ -80,7 +86,12 @@ export function TarjetaRecordatorio({ recordatorio, abierta, onAlternar }: Props
         abierta={abierta}
         claseCuerpo="mt-4 flex flex-col gap-3 border-t border-border pt-4"
         encabezado={
-          <div className="flex flex-col gap-1.5">
+          // Todo el encabezado alterna el acordeón, no solo el chevron: es un
+          // blanco mucho más cómodo con el dedo. El chevron sigue existiendo
+          // porque es el control accesible de verdad (lleva aria-expanded y se
+          // alcanza con el teclado); este div es una comodidad para el puntero.
+          // Los elementos que tienen su propia acción detienen la propagación.
+          <div className="flex cursor-pointer flex-col gap-1.5" onClick={onAlternar}>
             <div className="flex items-center gap-2.5">
               <span
                 aria-hidden
@@ -89,20 +100,59 @@ export function TarjetaRecordatorio({ recordatorio, abierta, onAlternar }: Props
                 <config.Icono className="size-4.5" />
               </span>
 
-              <label htmlFor={`recordatorio-titulo-${recordatorio.id}`} className="sr-only">
-                Título del recordatorio
-              </label>
-              <input
-                id={`recordatorio-titulo-${recordatorio.id}`}
-                value={recordatorio.titulo}
-                onChange={(e) => actualizar(recordatorio.id, { titulo: e.target.value })}
-                placeholder="Título del recordatorio"
-                className="min-w-0 flex-1 truncate bg-transparent font-display text-base font-semibold text-text outline-none"
-              />
+              {editando ? (
+                <>
+                  <label htmlFor={`recordatorio-titulo-${recordatorio.id}`} className="sr-only">
+                    Título del recordatorio
+                  </label>
+                  <input
+                    id={`recordatorio-titulo-${recordatorio.id}`}
+                    autoFocus
+                    value={recordatorio.titulo}
+                    onChange={(e) => actualizar(recordatorio.id, { titulo: e.target.value })}
+                    // Sin esto, poner el cursor en el título plegaría la tarjeta.
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={() => setEditando(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'Escape') setEditando(false)
+                    }}
+                    placeholder="Título del recordatorio"
+                    className="min-w-0 flex-1 truncate rounded-card bg-surface-2 px-2 py-0.5 font-display text-base font-semibold text-text outline-none"
+                  />
+                </>
+              ) : (
+                // Texto plano, no un input: así tocar el título expande la
+                // tarjeta como el resto del encabezado, en vez de quedarse
+                // quieto y hacer dudar de si la tarjeta se puede abrir.
+                <p className="min-w-0 flex-1 truncate font-display text-base font-semibold text-text">
+                  {recordatorio.titulo || <span className="text-muted">Sin título</span>}
+                </p>
+              )}
 
               <button
                 type="button"
-                onClick={onAlternar}
+                // preventDefault evita que el input pierda el foco al pulsar:
+                // si no, el onBlur cerraría la edición y este clic la volvería
+                // a abrir.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditando((actual) => !actual)
+                }}
+                aria-label={editando ? 'Terminar de editar el título' : 'Editar el título'}
+                className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-surface-2 hover:text-text"
+              >
+                {editando ? <IconoCheck className="size-4" /> : <IconoLapiz className="size-4" />}
+              </button>
+
+              <button
+                type="button"
+                onClick={(e) => {
+                  // El contenedor ya alterna; sin frenar aquí se alternaría
+                  // dos veces y la tarjeta no se movería.
+                  e.stopPropagation()
+                  onAlternar()
+                }}
                 aria-expanded={abierta}
                 aria-label={`${abierta ? 'Contraer' : 'Expandir'} ${recordatorio.titulo || 'el recordatorio'}`}
                 className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-surface-2 hover:text-text"
@@ -112,7 +162,10 @@ export function TarjetaRecordatorio({ recordatorio, abierta, onAlternar }: Props
 
               <button
                 type="button"
-                onClick={() => void eliminar(recordatorio.id)}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  void eliminar(recordatorio.id)
+                }}
                 aria-label={`Eliminar el recordatorio ${recordatorio.titulo || 'sin título'}`}
                 className="grid size-8 shrink-0 place-items-center rounded-card text-muted transition-colors hover:bg-danger-soft hover:text-danger"
               >

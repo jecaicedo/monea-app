@@ -20,9 +20,10 @@ import Revisa from '@/pages/presupuesto/Revisa'
  * Rutas de la aplicación.
  *
  *   /entrar, /registro          públicas (redirigen a la app si ya hay sesión)
- *   /metas, /bolsillos, /otros  las 3 pestañas de la barra inferior
- *   /presupuesto/*              vista con sus 4 sub-pestañas, se entra desde
- *                               Otros
+ *   /metas, /presupuesto,       las 4 pestañas de la barra inferior
+ *   /bolsillos, /otros
+ *   /presupuesto/*              la pestaña de presupuesto, con sus 4
+ *                               sub-pestañas
  */
 export default function App() {
   return (

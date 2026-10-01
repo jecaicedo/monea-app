@@ -295,6 +295,23 @@
     color: var(--color-text-muted);
     padding: 0 1px;
   }
+
+  /* Las opciones de un <select> desplegado son lo UNICO del menu nativo que se
+     puede pintar, y solo en Chrome y Firefox sobre Windows y Linux: ahi el
+     menu lo dibuja el navegador. En macOS e iOS lo dibuja el sistema operativo
+     y estas reglas se ignoran (el menu sale con el aspecto nativo, que de
+     todos modos se ve bien).
+
+     Sin esto, el desplegable sale con el gris por defecto del navegador, que
+     no tiene nada que ver con la paleta. */
+  option {
+    background-color: var(--color-surface);
+    color: var(--color-text);
+  }
+
+  option:disabled {
+    color: var(--color-text-muted);
+  }
 }
 
 /* ===========================================================================

@@ -234,9 +234,9 @@ agrégalo al mapa.
 
 /              protegida  redirige a /metas
 /metas         protegida  pestaña 1
-/bolsillos     protegida  pestaña 2
-/otros         protegida  pestaña 3
-/presupuesto   protegida  redirige a /presupuesto/actualiza
+/presupuesto   protegida  pestaña 2 — redirige a /presupuesto/actualiza
+/bolsillos     protegida  pestaña 3
+/otros         protegida  pestaña 4
   /actualiza   ·          sub-pestaña
   /revisa      ·          sub-pestaña
   /distribuir  ·          sub-pestaña
@@ -257,10 +257,11 @@ Ambas esperan a que `cargandoSesion` sea `false` antes de decidir. Si
 redirigieran de inmediato, un usuario con sesión válida vería un parpadeo del
 login en cada recarga, porque leer la sesión es asíncrono.
 
-**Presupuesto no está en la barra inferior** (solo tiene 3 pestañas): se entra
-desde la pestaña Otros. Mientras estás ahí, la pestaña
-Otros sigue resaltada — eso lo controla `relacionadas` en
-`src/components/BarraInferior.tsx`.
+**Presupuesto tiene pestaña propia** en la barra inferior, la segunda, justo
+después de Metas. Antes se entraba desde Otros y era la pestaña Otros la que
+quedaba resaltada, con el campo `relacionadas` de
+`src/components/BarraInferior.tsx`; eso ya no hace falta y ninguna pestaña lo
+usa hoy (el campo sigue existiendo por si otra ruta suelta lo necesita).
 
 ---
 

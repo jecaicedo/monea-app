@@ -1,10 +1,10 @@
 import type { ComponentType, SVGProps } from 'react'
 import { Link, useLocation } from 'react-router-dom'
 
-import { IconoBolsillos, IconoMetas, IconoOtros } from '@/components/ui/iconos'
+import { IconoBolsillos, IconoMetas, IconoOtros, IconoPresupuesto } from '@/components/ui/iconos'
 
 /**
- * Barra de navegación inferior: las 3 secciones principales de la app.
+ * Barra de navegación inferior: las 4 secciones principales de la app.
  *
  * En móvil ocupa todo el ancho, pegada abajo y respetando la barra de gestos.
  * En pantallas grandes flota como una píldora centrada, para que no se vea
@@ -21,15 +21,11 @@ interface Pestana {
 
 const PESTANAS: Pestana[] = [
   { ruta: '/metas', etiqueta: 'Metas', Icono: IconoMetas },
+  // Presupuesto tiene pestaña propia: ya no cuelga de Otros, así que tampoco
+  // necesita que ninguna otra pestaña lo reclame con `relacionadas`.
+  { ruta: '/presupuesto', etiqueta: 'Presupuesto', Icono: IconoPresupuesto },
   { ruta: '/bolsillos', etiqueta: 'Bolsillos', Icono: IconoBolsillos },
-  {
-    ruta: '/otros',
-    etiqueta: 'Otros',
-    Icono: IconoOtros,
-    // Presupuesto cuelga de Otros: la pestaña sigue marcada mientras el
-    // usuario está en cualquier sub-pestaña de /presupuesto.
-    relacionadas: ['/presupuesto'],
-  },
+  { ruta: '/otros', etiqueta: 'Otros', Icono: IconoOtros },
 ]
 
 export function BarraInferior() {
@@ -51,7 +47,12 @@ export function BarraInferior() {
         'sm:rounded-pill sm:border sm:px-2 sm:pb-0 sm:shadow-flotante',
       ].join(' ')}
     >
-      <ul className="mx-auto flex w-full max-w-md items-stretch justify-around sm:gap-1">
+      {/* En móvil la barra ocupa el ancho de la pantalla y `max-w-md` la centra
+          con un tope razonable en tablets. A partir de sm es una píldora
+          flotante que debe ajustarse a su contenido: con cuatro pestañas (y
+          "Presupuesto" entre ellas) el tope de 448px se queda corto y los
+          botones se salían del borde redondeado. */}
+      <ul className="mx-auto flex w-full max-w-md items-stretch justify-around sm:w-auto sm:max-w-none sm:gap-1">
         {PESTANAS.map((pestana) => {
           const activa = estaActiva(pestana)
           const { Icono } = pestana
@@ -68,7 +69,10 @@ export function BarraInferior() {
                 ].join(' ')}
               >
                 <Icono className={activa ? 'size-6 sm:size-5' : 'size-6 sm:size-5'} />
-                <span className="text-[11px] leading-none font-medium sm:text-sm">
+                {/* nowrap: "Presupuesto" es la etiqueta más larga y con cuatro
+                    pestañas en un celular angosto partiría en dos líneas,
+                    cambiándole el alto a toda la barra. */}
+                <span className="text-[11px] leading-none font-medium whitespace-nowrap sm:text-sm">
                   {pestana.etiqueta}
                 </span>
                 {/* Marca del acento bajo la pestaña activa (solo en móvil). */}

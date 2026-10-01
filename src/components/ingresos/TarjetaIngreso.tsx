@@ -5,7 +5,7 @@ import { SeccionDescuentos } from '@/components/ingresos/SeccionDescuentos'
 import { Acordeon } from '@/components/ui/Acordeon'
 import { Boton } from '@/components/ui/Boton'
 import { CampoMoneda } from '@/components/ui/CampoMoneda'
-import { IconoBasura, IconoFlechaAbajo } from '@/components/ui/iconos'
+import { IconoBasura, IconoCheck, IconoFlechaAbajo, IconoLapiz } from '@/components/ui/iconos'
 import { IndicadorGuardado } from '@/components/ui/IndicadorGuardado'
 import { SeccionExpandible } from '@/components/ui/SeccionExpandible'
 import { Selector } from '@/components/ui/Selector'
@@ -42,6 +42,9 @@ export function TarjetaIngreso({ ingreso, descuentos }: Props) {
 
   const [seccionAbierta, setSeccionAbierta] = useState<'deducciones' | 'descuentos' | null>(null)
   const [confirmandoEliminar, setConfirmandoEliminar] = useState(false)
+  // El nombre se edita solo al pedirlo con el lápiz, igual que en los
+  // recordatorios.
+  const [editandoNombre, setEditandoNombre] = useState(false)
 
   const montosDescuentos = descuentos.map((descuento) => descuento.monto)
   const totalDescuentosPersonalizados = montosDescuentos.reduce((suma, monto) => suma + monto, 0)
@@ -69,10 +72,23 @@ export function TarjetaIngreso({ ingreso, descuentos }: Props) {
         encabezado={
           abierta ? (
             // ---- Encabezado EXPANDIDO: nombre editable + guardado + eliminar ----
-            <div className="flex items-center gap-2 p-5 sm:p-7">
+            // Todo el encabezado contrae la tarjeta, no solo el chevron, igual
+            // que en los recordatorios. El chevron sigue siendo el control
+            // accesible (lleva aria-expanded y se alcanza con el teclado); este
+            // div es una comodidad para el puntero, y cada elemento con acción
+            // propia detiene la propagación.
+            <div
+              className="flex cursor-pointer items-center gap-2 p-5 sm:p-7"
+              onClick={() => alternarAbierto(ingreso.id)}
+            >
               <button
                 type="button"
-                onClick={() => alternarAbierto(ingreso.id)}
+                onClick={(e) => {
+                  // El contenedor ya alterna; sin frenar aquí se alternaría dos
+                  // veces y la tarjeta no se movería.
+                  e.stopPropagation()
+                  alternarAbierto(ingreso.id)
+                }}
                 aria-expanded={true}
                 aria-label="Contraer este ingreso"
                 className="grid size-8 shrink-0 place-items-center rounded-pill text-muted transition-colors hover:bg-surface-2 hover:text-text"
@@ -80,16 +96,49 @@ export function TarjetaIngreso({ ingreso, descuentos }: Props) {
                 <IconoFlechaAbajo className="size-4 rotate-180" />
               </button>
 
-              <label htmlFor={`nombre-${ingreso.id}`} className="sr-only">
-                Nombre del ingreso
-              </label>
-              <input
-                id={`nombre-${ingreso.id}`}
-                value={ingreso.nombre}
-                onChange={(e) => actualizarIngreso(ingreso.id, { nombre: e.target.value })}
-                placeholder="Nombre del ingreso, ej. Davivienda"
-                className="min-w-0 flex-1 rounded-card bg-transparent px-1 font-display text-lg font-semibold text-text outline-none placeholder:text-muted focus:bg-surface-2"
-              />
+              {editandoNombre ? (
+                <>
+                  <label htmlFor={`nombre-${ingreso.id}`} className="sr-only">
+                    Nombre del ingreso
+                  </label>
+                  <input
+                    id={`nombre-${ingreso.id}`}
+                    autoFocus
+                    value={ingreso.nombre}
+                    onChange={(e) => actualizarIngreso(ingreso.id, { nombre: e.target.value })}
+                    // Sin esto, poner el cursor en el nombre contraería la tarjeta.
+                    onClick={(e) => e.stopPropagation()}
+                    onBlur={() => setEditandoNombre(false)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === 'Escape') setEditandoNombre(false)
+                    }}
+                    placeholder="Nombre del ingreso, ej. Davivienda"
+                    className="min-w-0 flex-1 rounded-card bg-surface-2 px-2 py-0.5 font-display text-lg font-semibold text-text outline-none placeholder:text-muted"
+                  />
+                </>
+              ) : (
+                // Texto plano hasta que se pida editarlo con el lápiz: un input
+                // transparente parece texto y no se sabe que se puede tocar.
+                <p className="min-w-0 flex-1 truncate font-display text-lg font-semibold text-text">
+                  {ingreso.nombre || <span className="text-muted">Ingreso sin nombre</span>}
+                </p>
+              )}
+
+              <button
+                type="button"
+                // preventDefault evita que el input pierda el foco al pulsar:
+                // si no, el onBlur cerraría la edición y este clic la volvería
+                // a abrir.
+                onMouseDown={(e) => e.preventDefault()}
+                onClick={(e) => {
+                  e.stopPropagation()
+                  setEditandoNombre((actual) => !actual)
+                }}
+                aria-label={editandoNombre ? 'Terminar de editar el nombre' : 'Editar el nombre'}
+                className="grid size-8 shrink-0 place-items-center rounded-pill text-muted transition-colors hover:bg-surface-2 hover:text-text"
+              >
+                {editandoNombre ? <IconoCheck className="size-4" /> : <IconoLapiz className="size-4" />}
+              </button>
 
               <IndicadorGuardado guardando={guardando} />
 
@@ -98,14 +147,20 @@ export function TarjetaIngreso({ ingreso, descuentos }: Props) {
                   <span className="hidden text-muted sm:inline">¿Eliminar?</span>
                   <button
                     type="button"
-                    onClick={() => void eliminarIngreso(ingreso.id)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      void eliminarIngreso(ingreso.id)
+                    }}
                     className="rounded-pill bg-danger-fill px-2.5 py-1.5 font-semibold text-white"
                   >
                     Sí
                   </button>
                   <button
                     type="button"
-                    onClick={() => setConfirmandoEliminar(false)}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setConfirmandoEliminar(false)
+                    }}
                     className="rounded-pill px-2.5 py-1.5 font-semibold text-muted hover:bg-surface-2"
                   >
                     No
@@ -114,7 +169,10 @@ export function TarjetaIngreso({ ingreso, descuentos }: Props) {
               ) : (
                 <button
                   type="button"
-                  onClick={() => setConfirmandoEliminar(true)}
+                  onClick={(e) => {
+                    e.stopPropagation()
+                    setConfirmandoEliminar(true)
+                  }}
                   aria-label={`Eliminar el ingreso ${ingreso.nombre}`}
                   className="grid size-9 shrink-0 place-items-center rounded-pill text-muted transition-colors hover:bg-danger-soft hover:text-danger"
                 >

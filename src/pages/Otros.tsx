@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom'
 import type { ComponentType, SVGProps } from 'react'
 
 import { EncabezadoPagina } from '@/components/EncabezadoPagina'
-import { IconoCampana, IconoFlechaAbajo, IconoInforme, IconoPresupuesto, IconoRegalo } from '@/components/ui/iconos'
+import { IconoCampana, IconoFlechaAbajo, IconoInforme, IconoRegalo } from '@/components/ui/iconos'
 import { calcularEstadoProximidad, calcularProximaOcurrencia } from '@/lib/recordatorios'
 import { useRecordatorios } from '@/stores/recordatorios'
 
@@ -37,7 +37,7 @@ function TarjetaAcceso({ to, Icono, titulo, descripcion, conAviso = false }: Pro
   )
 }
 
-/** Otros: antojos, recordatorios, ingresos y ajustes. */
+/** Otros: antojos, recordatorios e informe. */
 export default function Otros() {
   const recordatorios = useRecordatorios((estado) => estado.recordatorios)
   const cargarRecordatorios = useRecordatorios((estado) => estado.cargar)
@@ -58,14 +58,7 @@ export default function Otros() {
 
   return (
     <>
-      <EncabezadoPagina titulo="Otros" descripcion="Tu presupuesto, tus antojos, tus recordatorios y tu informe." />
-
-      <TarjetaAcceso
-        to="/presupuesto"
-        Icono={IconoPresupuesto}
-        titulo="Tu presupuesto"
-        descripcion="Ingresos, categorías y bolsillos: arma y revisa tu plan"
-      />
+      <EncabezadoPagina titulo="Otros" descripcion="Tus antojos, tus recordatorios y tu informe." />
 
       <TarjetaAcceso
         to="/otros/antojos"
