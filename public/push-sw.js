@@ -9,20 +9,47 @@
  * Por eso es JavaScript plano: no pasa por TypeScript ni por el bundler. El
  * navegador compara estos importScripts byte a byte al buscar actualizaciones,
  * así que los cambios llegan igual que los del resto del service worker.
+ *
+ * OJO si este archivo llegara a dar 404 en producción: `importScripts` lanza y
+ * el service worker ENTERO falla al instalarse — no solo el push, también el
+ * caché y el modo sin conexión. Por eso lo primero que hace es anunciarse en
+ * la consola.
  */
 
 /* global self, clients */
 
+/**
+ * Sube este número al cambiar el archivo. Sirve para saber, desde la consola
+ * del service worker, si el dispositivo ya está corriendo la versión nueva o
+ * se quedó con una vieja en caché — que es el modo de falla más común en una
+ * PWA instalada en iOS.
+ */
+const VERSION_PUSH_SW = 2
+
+const PREFIJO = '[monea-push]'
 const URL_RECORDATORIOS = '/otros/recordatorios'
 
+console.log(`${PREFIJO} cargado, versión ${VERSION_PUSH_SW}`)
+
 self.addEventListener('push', (evento) => {
-  // Si el payload no es JSON válido (o no viene), igual se muestra algo: una
-  // notificación vacía o un error aquí haría que el navegador muestre su
-  // propio aviso genérico de "actualización en segundo plano".
+  console.log(`${PREFIJO} evento push recibido`, { tieneDatos: Boolean(evento.data) })
+
+  // Nunca se deja que una excepción salga de aquí: si el listener lanza, el
+  // navegador descarta el push en silencio y no se muestra absolutamente nada.
   let datos = {}
   try {
     datos = evento.data ? evento.data.json() : {}
-  } catch {
+    console.log(`${PREFIJO} payload interpretado`, datos)
+  } catch (error) {
+    // Se registra el texto crudo: si el payload no era JSON, esto es lo único
+    // que permite ver qué llegó de verdad.
+    let crudo = '(no se pudo leer)'
+    try {
+      crudo = evento.data ? evento.data.text() : '(sin datos)'
+    } catch {
+      /* se queda el valor por defecto */
+    }
+    console.error(`${PREFIJO} el payload no era JSON válido`, crudo, error)
     datos = {}
   }
 
@@ -38,10 +65,24 @@ self.addEventListener('push', (evento) => {
     data: { url: datos.url || URL_RECORDATORIOS },
   }
 
-  evento.waitUntil(self.registration.showNotification(titulo, opciones))
+  console.log(`${PREFIJO} mostrando notificación`, titulo, opciones)
+
+  evento.waitUntil(
+    self.registration
+      .showNotification(titulo, opciones)
+      .then(() => console.log(`${PREFIJO} notificación mostrada`))
+      .catch((error) => {
+        // Si showNotification falla (permiso revocado, opción inválida), se
+        // reintenta con lo mínimo indispensable: más vale un aviso soso que
+        // ninguno. En iOS basta que una opción no le guste para no mostrar nada.
+        console.error(`${PREFIJO} showNotification falló, reintentando sin opciones`, error)
+        return self.registration.showNotification(titulo, { body: opciones.body })
+      }),
+  )
 })
 
 self.addEventListener('notificationclick', (evento) => {
+  console.log(`${PREFIJO} notificación pulsada`)
   evento.notification.close()
 
   const destino = (evento.notification.data && evento.notification.data.url) || URL_RECORDATORIOS
